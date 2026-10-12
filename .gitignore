@@ -1,0 +1,13 @@
+# Gizli banka verisi: örnek ekstreler ve çıktılar depoya girmez
+*.pdf
+*.xlsx
+*.xls
+*.zip
+ornekler/
+**/ornekler/
+
+# Geliştirme
+node_modules/
+.derleme/
+.DS_Store
+Thumbs.db

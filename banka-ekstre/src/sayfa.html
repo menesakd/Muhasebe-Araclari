@@ -1,0 +1,259 @@
+<title>Ekstre Dönüştürücü</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  /* Yerleşim: tek sütunlu çalışma masası; üstte bırakma alanı ve seçenekler, altında her ekstre için bir hesap fişi
+     (mutabakat satırı: açılış + giren − çıkan = son bakiye, altında satır önizlemesi). */
+  :root {
+    --zemin: #edf1f6;
+    --yuzey: #ffffff;
+    --yuzey-2: #f5f7fa;
+    --murekkep: #172338;
+    --soluk: #55637a;
+    --cizgi: #d4dce7;
+    --vurgu: #1f4fa3;
+    --vurgu-zemin: #e2eaf7;
+    --vurgu-yazi: #ffffff;
+    --iyi: #17663a;
+    --iyi-zemin: #e0f1e6;
+    --kotu: #a3271b;
+    --kotu-zemin: #fbe4e1;
+    --uyari: #8a5300;
+    --uyari-zemin: #fbeed6;
+    --eksi: #98302b;
+    --golge: 0 1px 2px rgb(23 35 56 / 0.05), 0 6px 18px rgb(23 35 56 / 0.06);
+    --f-baslik: "IBM Plex Sans Condensed", "Arial Narrow", "Segoe UI", system-ui, sans-serif;
+    --f-govde: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+    --f-sayi: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --zemin: #0e1420; --yuzey: #151d2c; --yuzey-2: #1a2436; --murekkep: #e3e8f1; --soluk: #9ba9bf;
+      --cizgi: #2a3650; --vurgu: #86abf6; --vurgu-zemin: #1c2b48; --vurgu-yazi: #0b1220;
+      --iyi: #74d39c; --iyi-zemin: #12301f; --kotu: #f29d92; --kotu-zemin: #3b1b17;
+      --uyari: #f1c071; --uyari-zemin: #35280f; --eksi: #f0a8a3;
+      --golge: 0 1px 2px rgb(0 0 0 / 0.35), 0 8px 22px rgb(0 0 0 / 0.25);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --zemin: #0e1420; --yuzey: #151d2c; --yuzey-2: #1a2436; --murekkep: #e3e8f1; --soluk: #9ba9bf;
+    --cizgi: #2a3650; --vurgu: #86abf6; --vurgu-zemin: #1c2b48; --vurgu-yazi: #0b1220;
+    --iyi: #74d39c; --iyi-zemin: #12301f; --kotu: #f29d92; --kotu-zemin: #3b1b17;
+    --uyari: #f1c071; --uyari-zemin: #35280f; --eksi: #f0a8a3;
+    --golge: 0 1px 2px rgb(0 0 0 / 0.35), 0 8px 22px rgb(0 0 0 / 0.25);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body {
+    margin: 0;
+    background: var(--zemin);
+    color: var(--murekkep);
+    font-family: var(--f-govde);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .masa {
+    max-width: 1060px;
+    margin-inline: auto;
+    padding-inline: clamp(16px, 4vw, 40px);
+    padding-block: 36px 72px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+  }
+  .masa > *, .sonuclar > *, #liste, .fis { min-width: 0; }
+  .sayi { font-family: var(--f-sayi); font-variant-numeric: tabular-nums; }
+  :focus-visible { outline: 2px solid var(--vurgu); outline-offset: 2px; }
+
+  /* başlık */
+  .ust { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 32px; }
+  .ust > div { min-width: 0; max-width: 62ch; display: grid; gap: 6px; }
+  .ust-etiket { margin: 0; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--soluk); }
+  h1 { margin: 0; font-family: var(--f-baslik); font-weight: 700; font-size: clamp(1.9rem, 4vw, 2.5rem); line-height: 1.1; letter-spacing: -0.01em; text-wrap: balance; }
+  .ust-aciklama { margin: 0; color: var(--soluk); }
+  .ust-aciklama b { color: var(--murekkep); font-weight: 600; }
+  .gizlilik { margin: 0; display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--soluk); }
+  .gizlilik svg { width: 16px; height: 16px; flex: none; fill: none; stroke: var(--iyi); stroke-width: 1.6; }
+
+  /* bırakma alanı */
+  .birak { display: grid; gap: 14px; }
+  .birak-alan {
+    position: relative;
+    display: grid;
+    justify-items: start;
+    gap: 4px;
+    padding: 26px 28px 26px 84px;
+    background: var(--yuzey);
+    border: 1.5px dashed var(--cizgi);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: border-color 0.15s, background-color 0.15s;
+  }
+  .birak-alan:hover, .birak-alan.uzerinde { border-color: var(--vurgu); background: var(--vurgu-zemin); }
+  .birak-alan:focus-within { outline: 2px solid var(--vurgu); outline-offset: 2px; }
+  .birak-alan svg { position: absolute; left: 28px; top: 50%; translate: 0 -50%; width: 36px; height: 36px; fill: none; stroke: var(--vurgu); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .birak-baslik { font-family: var(--f-baslik); font-weight: 600; font-size: 1.25rem; }
+  .birak-alt { color: var(--soluk); font-size: 0.9rem; }
+  .birak-alt u { color: var(--vurgu); text-underline-offset: 3px; }
+  .gorunmez { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .secenekler { display: flex; flex-wrap: wrap; gap: 8px 28px; font-size: 0.9rem; }
+  .secenekler label { display: inline-flex; align-items: start; gap: 8px; cursor: pointer; }
+  .secenekler input { margin: 3px 0 0; accent-color: var(--vurgu); width: 16px; height: 16px; flex: none; }
+
+  /* araç çubuğu */
+  .sonuclar { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  #liste { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .arac-cubugu { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; }
+  .arac-cubugu p { margin: 0; color: var(--soluk); font-size: 0.9rem; }
+  .arac-cubugu div { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  /* düğmeler */
+  button { font: inherit; }
+  .birincil, .ikincil, .sessiz {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 0.5rem 0.95rem; border-radius: 6px; font-weight: 600; font-size: 0.9rem; cursor: pointer;
+    transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .birincil { background: var(--vurgu); color: var(--vurgu-yazi); border: 1px solid var(--vurgu); }
+  .birincil:hover { filter: brightness(1.08); }
+  .ikincil { background: transparent; color: var(--murekkep); border: 1px solid var(--cizgi); }
+  .ikincil:hover { border-color: var(--vurgu); color: var(--vurgu); }
+  .sessiz { background: transparent; border: 1px solid transparent; color: var(--soluk); }
+  .sessiz:hover { color: var(--murekkep); }
+
+  /* hesap fişi */
+  .fis { background: var(--yuzey); border: 1px solid var(--cizgi); border-radius: 10px; box-shadow: var(--golge); overflow: hidden; }
+  .fis-ust { display: flex; flex-wrap: wrap; align-items: start; justify-content: space-between; gap: 8px 16px; padding: 18px 22px 0; }
+  .fis-kimlik { min-width: 0; }
+  .fis h2 { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-family: var(--f-baslik); font-weight: 700; font-size: 1.3rem; line-height: 1.25; }
+  .dosya { margin: 2px 0 0; font-size: 0.85rem; color: var(--soluk); overflow-wrap: anywhere; }
+  .fis-mesaj { margin: 0; padding: 12px 22px 20px; color: var(--soluk); }
+  .fis-mesaj.kotu { color: var(--kotu); }
+  .fis-bilgi { margin: 0; padding: 12px 22px 16px; display: flex; flex-wrap: wrap; gap: 6px 36px; }
+  .fis-bilgi div { min-width: 0; }
+  .fis-bilgi dt { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--soluk); }
+  .fis-bilgi dd { margin: 0; font-size: 0.92rem; overflow-wrap: anywhere; }
+
+  .mutabakat {
+    display: flex; flex-wrap: wrap; align-items: end; gap: 10px 18px;
+    padding: 14px 22px; background: var(--yuzey-2);
+    border-block: 1px solid var(--cizgi);
+  }
+  .kalem { display: grid; grid-template-columns: auto auto; grid-template-areas: ". etiket" "isaret deger"; column-gap: 10px; row-gap: 2px; min-width: 0; }
+  .kalem span { grid-area: etiket; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--soluk); }
+  .kalem b { grid-area: deger; font-family: var(--f-sayi); font-variant-numeric: tabular-nums; font-weight: 500; font-size: 1.05rem; }
+  .kalem i { grid-area: isaret; font-style: normal; font-family: var(--f-sayi); color: var(--soluk); font-size: 1.05rem; }
+  .kalem.son b { font-weight: 600; }
+
+  .notlar { margin: 0; padding: 12px 22px 0 40px; display: grid; gap: 4px; font-size: 0.88rem; color: var(--soluk); max-width: 90ch; }
+  .fis-eylem { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 16px 22px 18px; }
+  .cikti-adi { font-family: var(--f-sayi); font-size: 0.8rem; color: var(--soluk); overflow-wrap: anywhere; }
+
+  .cip {
+    display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;
+    padding: 3px 10px; border-radius: 999px; font-family: var(--f-govde); font-size: 0.78rem; font-weight: 600; letter-spacing: 0;
+  }
+  .cip svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .cip-iyi { background: var(--iyi-zemin); color: var(--iyi); }
+  .cip-kotu { background: var(--kotu-zemin); color: var(--kotu); }
+  .cip-uyari { background: var(--uyari-zemin); color: var(--uyari); }
+  .cip-bilgi { background: var(--vurgu-zemin); color: var(--vurgu); }
+  .cip-ornek { background: var(--yuzey-2); color: var(--soluk); border: 1px dashed var(--cizgi); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.68rem; }
+
+  .sifre { padding: 12px 22px 20px; display: grid; gap: 8px; max-width: 70ch; font-size: 0.9rem; }
+  .sifre-satir { display: flex; flex-wrap: wrap; gap: 8px; }
+  .sifre input { flex: 1 1 220px; min-width: 0; padding: 0.5rem 0.7rem; border: 1px solid var(--cizgi); border-radius: 6px; background: var(--yuzey); color: var(--murekkep); font: inherit; }
+
+  /* önizleme tablosu */
+  .onizleme { max-height: 460px; overflow: auto; border-top: 1px solid var(--cizgi); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+  thead th {
+    position: sticky; top: 0; z-index: 1; background: var(--yuzey);
+    text-align: left; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--soluk);
+    padding: 10px 12px; border-bottom: 1px solid var(--cizgi); white-space: nowrap;
+  }
+  thead th small { text-transform: none; letter-spacing: 0; font-weight: 400; }
+  th.sag { text-align: right; }
+  td { padding: 7px 12px; border-bottom: 1px solid var(--cizgi); vertical-align: top; }
+  td.sayi { white-space: nowrap; }
+  td.tutar, td.bakiye { text-align: right; }
+  td.bakiye { color: var(--soluk); }
+  td.aciklama { min-width: 300px; overflow-wrap: anywhere; }
+  td.eksi { color: var(--eksi); }
+  tr.hata td { background: var(--kotu-zemin); }
+  tr.hata td:first-child { box-shadow: inset 3px 0 0 var(--kotu); }
+  tr.disarida td { color: var(--soluk); }
+  tr.disarida td.tutar { text-decoration: line-through; }
+  .satir-etiket { display: inline-block; margin-left: 8px; padding: 0 6px; border-radius: 4px; font-size: 0.72rem; font-weight: 600; color: var(--uyari); background: var(--uyari-zemin); white-space: nowrap; }
+  .satir-etiket.kotu { color: var(--kotu); background: var(--yuzey); }
+
+  /* alt bilgi */
+  .alt { display: grid; gap: 8px; font-size: 0.86rem; color: var(--soluk); border-top: 1px solid var(--cizgi); padding-top: 18px; }
+  .alt p { margin: 0; max-width: 92ch; }
+  .alt b { color: var(--murekkep); font-weight: 600; }
+
+  .bildirim {
+    position: fixed; left: 50%; translate: -50% 0; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 10;
+    max-width: min(92vw, 520px); padding: 10px 16px; border-radius: 8px;
+    background: var(--murekkep); color: var(--yuzey); font-size: 0.9rem; box-shadow: var(--golge);
+  }
+
+  @media (max-width: 560px) {
+    .birak-alan { padding: 22px 18px 22px 64px; }
+    .birak-alan svg { left: 16px; width: 32px; height: 32px; }
+    .fis-ust, .fis-bilgi, .mutabakat, .fis-eylem, .fis-mesaj, .sifre { padding-inline: 16px; }
+    .notlar { padding-inline: 34px 16px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+
+<main class="masa" lang="tr">
+  <header class="ust">
+    <div>
+      <p class="ust-etiket">Muhasebe Araçları</p>
+      <h1>Ekstre Dönüştürücü</h1>
+      <p class="ust-aciklama">Banka PDF ekstresini Zirve Nova’ya aktarılacak Excel’e çevirir: <b>Tarih</b>, <b>Açıklama</b>, <b>Tutar</b> (giren artı, çıkan eksi) ve <b>Evrak No</b>.</p>
+    </div>
+    <p class="gizlilik"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>Dosyalar bu bilgisayarda işlenir, hiçbir yere yüklenmez.</p>
+  </header>
+
+  <section class="birak" aria-label="Ekstre ekleme">
+    <label class="birak-alan" id="birakAlan" for="dosyaSec">
+      <input class="gorunmez" type="file" id="dosyaSec" accept="application/pdf,.pdf" multiple>
+      <svg viewBox="0 0 36 36" aria-hidden="true"><path d="M9 4h13l7 7v21H9z"/><path d="M22 4v7h7"/><path d="M19 15v11M14.5 21.5 19 26l4.5-4.5"/></svg>
+      <span class="birak-baslik">PDF ekstreleri buraya bırakın</span>
+      <span class="birak-alt">ya da <u>dosya seçin</u> · birden çok dosya bırakabilirsiniz</span>
+    </label>
+    <div class="secenekler">
+      <label for="siraNo"><input type="checkbox" id="siraNo">Evrak numarası olmayan satırlara sıra numarası ver</label>
+      <label for="icVirman"><input type="checkbox" id="icVirman">Bakiyeyi değiştirmeyen iç virmanları da ekle (ör. KMH borcu tahsilatı)</label>
+    </div>
+  </section>
+
+  <section class="sonuclar" aria-live="polite">
+    <div class="arac-cubugu" id="aracCubugu" hidden>
+      <p id="ozetMetin"></p>
+      <div>
+        <button class="ikincil" type="button" id="tumunuIndir" hidden>Tümünü indir (.zip)</button>
+        <button class="sessiz" type="button" id="temizle">Listeyi temizle</button>
+      </div>
+    </div>
+    <div id="liste"></div>
+  </section>
+
+  <footer class="alt">
+    <p><b>Tanınan biçimler:</b> Akbank, Halkbank (iki biçim), İş Bankası, Kuveyt Türk, QNB, TEB, Vakıfbank, Yapı Kredi, Ziraat Bankası. Diğer bankaların ekstreleri genel okuyucuyla denenir.</p>
+    <p><b>Bakiye kontrolü:</b> her satırda önceki bakiyeye tutar eklenir ve sonuç ekstredeki bakiyeyle karşılaştırılır. Tutmayan satır işaretlenir; kontrol tutarlıysa tarih, tutar ve işaretler ekstreyle birebir aynıdır.</p>
+    <p><b>Excel biçimi:</b> tek sayfa, ilk satır başlık; tarih gg.aa.yyyy, tutar sayı, evrak no metin.</p>
+  </footer>
+
+  <div class="bildirim" id="bildirim" role="status" hidden></div>
+</main>
+<!--UYGULAMA-->

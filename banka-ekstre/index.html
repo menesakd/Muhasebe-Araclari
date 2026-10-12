@@ -1,0 +1,1745 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Ekstre Dönüştürücü</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  /* Yerleşim: tek sütunlu çalışma masası; üstte bırakma alanı ve seçenekler, altında her ekstre için bir hesap fişi
+     (mutabakat satırı: açılış + giren − çıkan = son bakiye, altında satır önizlemesi). */
+  :root {
+    --zemin: #edf1f6;
+    --yuzey: #ffffff;
+    --yuzey-2: #f5f7fa;
+    --murekkep: #172338;
+    --soluk: #55637a;
+    --cizgi: #d4dce7;
+    --vurgu: #1f4fa3;
+    --vurgu-zemin: #e2eaf7;
+    --vurgu-yazi: #ffffff;
+    --iyi: #17663a;
+    --iyi-zemin: #e0f1e6;
+    --kotu: #a3271b;
+    --kotu-zemin: #fbe4e1;
+    --uyari: #8a5300;
+    --uyari-zemin: #fbeed6;
+    --eksi: #98302b;
+    --golge: 0 1px 2px rgb(23 35 56 / 0.05), 0 6px 18px rgb(23 35 56 / 0.06);
+    --f-baslik: "IBM Plex Sans Condensed", "Arial Narrow", "Segoe UI", system-ui, sans-serif;
+    --f-govde: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+    --f-sayi: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --zemin: #0e1420; --yuzey: #151d2c; --yuzey-2: #1a2436; --murekkep: #e3e8f1; --soluk: #9ba9bf;
+      --cizgi: #2a3650; --vurgu: #86abf6; --vurgu-zemin: #1c2b48; --vurgu-yazi: #0b1220;
+      --iyi: #74d39c; --iyi-zemin: #12301f; --kotu: #f29d92; --kotu-zemin: #3b1b17;
+      --uyari: #f1c071; --uyari-zemin: #35280f; --eksi: #f0a8a3;
+      --golge: 0 1px 2px rgb(0 0 0 / 0.35), 0 8px 22px rgb(0 0 0 / 0.25);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --zemin: #0e1420; --yuzey: #151d2c; --yuzey-2: #1a2436; --murekkep: #e3e8f1; --soluk: #9ba9bf;
+    --cizgi: #2a3650; --vurgu: #86abf6; --vurgu-zemin: #1c2b48; --vurgu-yazi: #0b1220;
+    --iyi: #74d39c; --iyi-zemin: #12301f; --kotu: #f29d92; --kotu-zemin: #3b1b17;
+    --uyari: #f1c071; --uyari-zemin: #35280f; --eksi: #f0a8a3;
+    --golge: 0 1px 2px rgb(0 0 0 / 0.35), 0 8px 22px rgb(0 0 0 / 0.25);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body {
+    margin: 0;
+    background: var(--zemin);
+    color: var(--murekkep);
+    font-family: var(--f-govde);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .masa {
+    max-width: 1060px;
+    margin-inline: auto;
+    padding-inline: clamp(16px, 4vw, 40px);
+    padding-block: 36px 72px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+  }
+  .masa > *, .sonuclar > *, #liste, .fis { min-width: 0; }
+  .sayi { font-family: var(--f-sayi); font-variant-numeric: tabular-nums; }
+  :focus-visible { outline: 2px solid var(--vurgu); outline-offset: 2px; }
+
+  /* başlık */
+  .ust { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 32px; }
+  .ust > div { min-width: 0; max-width: 62ch; display: grid; gap: 6px; }
+  .ust-etiket { margin: 0; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--soluk); }
+  h1 { margin: 0; font-family: var(--f-baslik); font-weight: 700; font-size: clamp(1.9rem, 4vw, 2.5rem); line-height: 1.1; letter-spacing: -0.01em; text-wrap: balance; }
+  .ust-aciklama { margin: 0; color: var(--soluk); }
+  .ust-aciklama b { color: var(--murekkep); font-weight: 600; }
+  .gizlilik { margin: 0; display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--soluk); }
+  .gizlilik svg { width: 16px; height: 16px; flex: none; fill: none; stroke: var(--iyi); stroke-width: 1.6; }
+
+  /* bırakma alanı */
+  .birak { display: grid; gap: 14px; }
+  .birak-alan {
+    position: relative;
+    display: grid;
+    justify-items: start;
+    gap: 4px;
+    padding: 26px 28px 26px 84px;
+    background: var(--yuzey);
+    border: 1.5px dashed var(--cizgi);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: border-color 0.15s, background-color 0.15s;
+  }
+  .birak-alan:hover, .birak-alan.uzerinde { border-color: var(--vurgu); background: var(--vurgu-zemin); }
+  .birak-alan:focus-within { outline: 2px solid var(--vurgu); outline-offset: 2px; }
+  .birak-alan svg { position: absolute; left: 28px; top: 50%; translate: 0 -50%; width: 36px; height: 36px; fill: none; stroke: var(--vurgu); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .birak-baslik { font-family: var(--f-baslik); font-weight: 600; font-size: 1.25rem; }
+  .birak-alt { color: var(--soluk); font-size: 0.9rem; }
+  .birak-alt u { color: var(--vurgu); text-underline-offset: 3px; }
+  .gorunmez { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .secenekler { display: flex; flex-wrap: wrap; gap: 8px 28px; font-size: 0.9rem; }
+  .secenekler label { display: inline-flex; align-items: start; gap: 8px; cursor: pointer; }
+  .secenekler input { margin: 3px 0 0; accent-color: var(--vurgu); width: 16px; height: 16px; flex: none; }
+
+  /* araç çubuğu */
+  .sonuclar { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  #liste { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .arac-cubugu { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; }
+  .arac-cubugu p { margin: 0; color: var(--soluk); font-size: 0.9rem; }
+  .arac-cubugu div { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  /* düğmeler */
+  button { font: inherit; }
+  .birincil, .ikincil, .sessiz {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 0.5rem 0.95rem; border-radius: 6px; font-weight: 600; font-size: 0.9rem; cursor: pointer;
+    transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .birincil { background: var(--vurgu); color: var(--vurgu-yazi); border: 1px solid var(--vurgu); }
+  .birincil:hover { filter: brightness(1.08); }
+  .ikincil { background: transparent; color: var(--murekkep); border: 1px solid var(--cizgi); }
+  .ikincil:hover { border-color: var(--vurgu); color: var(--vurgu); }
+  .sessiz { background: transparent; border: 1px solid transparent; color: var(--soluk); }
+  .sessiz:hover { color: var(--murekkep); }
+
+  /* hesap fişi */
+  .fis { background: var(--yuzey); border: 1px solid var(--cizgi); border-radius: 10px; box-shadow: var(--golge); overflow: hidden; }
+  .fis-ust { display: flex; flex-wrap: wrap; align-items: start; justify-content: space-between; gap: 8px 16px; padding: 18px 22px 0; }
+  .fis-kimlik { min-width: 0; }
+  .fis h2 { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-family: var(--f-baslik); font-weight: 700; font-size: 1.3rem; line-height: 1.25; }
+  .dosya { margin: 2px 0 0; font-size: 0.85rem; color: var(--soluk); overflow-wrap: anywhere; }
+  .fis-mesaj { margin: 0; padding: 12px 22px 20px; color: var(--soluk); }
+  .fis-mesaj.kotu { color: var(--kotu); }
+  .fis-bilgi { margin: 0; padding: 12px 22px 16px; display: flex; flex-wrap: wrap; gap: 6px 36px; }
+  .fis-bilgi div { min-width: 0; }
+  .fis-bilgi dt { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--soluk); }
+  .fis-bilgi dd { margin: 0; font-size: 0.92rem; overflow-wrap: anywhere; }
+
+  .mutabakat {
+    display: flex; flex-wrap: wrap; align-items: end; gap: 10px 18px;
+    padding: 14px 22px; background: var(--yuzey-2);
+    border-block: 1px solid var(--cizgi);
+  }
+  .kalem { display: grid; grid-template-columns: auto auto; grid-template-areas: ". etiket" "isaret deger"; column-gap: 10px; row-gap: 2px; min-width: 0; }
+  .kalem span { grid-area: etiket; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--soluk); }
+  .kalem b { grid-area: deger; font-family: var(--f-sayi); font-variant-numeric: tabular-nums; font-weight: 500; font-size: 1.05rem; }
+  .kalem i { grid-area: isaret; font-style: normal; font-family: var(--f-sayi); color: var(--soluk); font-size: 1.05rem; }
+  .kalem.son b { font-weight: 600; }
+
+  .notlar { margin: 0; padding: 12px 22px 0 40px; display: grid; gap: 4px; font-size: 0.88rem; color: var(--soluk); max-width: 90ch; }
+  .fis-eylem { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 16px 22px 18px; }
+  .cikti-adi { font-family: var(--f-sayi); font-size: 0.8rem; color: var(--soluk); overflow-wrap: anywhere; }
+
+  .cip {
+    display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;
+    padding: 3px 10px; border-radius: 999px; font-family: var(--f-govde); font-size: 0.78rem; font-weight: 600; letter-spacing: 0;
+  }
+  .cip svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .cip-iyi { background: var(--iyi-zemin); color: var(--iyi); }
+  .cip-kotu { background: var(--kotu-zemin); color: var(--kotu); }
+  .cip-uyari { background: var(--uyari-zemin); color: var(--uyari); }
+  .cip-bilgi { background: var(--vurgu-zemin); color: var(--vurgu); }
+  .cip-ornek { background: var(--yuzey-2); color: var(--soluk); border: 1px dashed var(--cizgi); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.68rem; }
+
+  .sifre { padding: 12px 22px 20px; display: grid; gap: 8px; max-width: 70ch; font-size: 0.9rem; }
+  .sifre-satir { display: flex; flex-wrap: wrap; gap: 8px; }
+  .sifre input { flex: 1 1 220px; min-width: 0; padding: 0.5rem 0.7rem; border: 1px solid var(--cizgi); border-radius: 6px; background: var(--yuzey); color: var(--murekkep); font: inherit; }
+
+  /* önizleme tablosu */
+  .onizleme { max-height: 460px; overflow: auto; border-top: 1px solid var(--cizgi); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+  thead th {
+    position: sticky; top: 0; z-index: 1; background: var(--yuzey);
+    text-align: left; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--soluk);
+    padding: 10px 12px; border-bottom: 1px solid var(--cizgi); white-space: nowrap;
+  }
+  thead th small { text-transform: none; letter-spacing: 0; font-weight: 400; }
+  th.sag { text-align: right; }
+  td { padding: 7px 12px; border-bottom: 1px solid var(--cizgi); vertical-align: top; }
+  td.sayi { white-space: nowrap; }
+  td.tutar, td.bakiye { text-align: right; }
+  td.bakiye { color: var(--soluk); }
+  td.aciklama { min-width: 300px; overflow-wrap: anywhere; }
+  td.eksi { color: var(--eksi); }
+  tr.hata td { background: var(--kotu-zemin); }
+  tr.hata td:first-child { box-shadow: inset 3px 0 0 var(--kotu); }
+  tr.disarida td { color: var(--soluk); }
+  tr.disarida td.tutar { text-decoration: line-through; }
+  .satir-etiket { display: inline-block; margin-left: 8px; padding: 0 6px; border-radius: 4px; font-size: 0.72rem; font-weight: 600; color: var(--uyari); background: var(--uyari-zemin); white-space: nowrap; }
+  .satir-etiket.kotu { color: var(--kotu); background: var(--yuzey); }
+
+  /* alt bilgi */
+  .alt { display: grid; gap: 8px; font-size: 0.86rem; color: var(--soluk); border-top: 1px solid var(--cizgi); padding-top: 18px; }
+  .alt p { margin: 0; max-width: 92ch; }
+  .alt b { color: var(--murekkep); font-weight: 600; }
+
+  .bildirim {
+    position: fixed; left: 50%; translate: -50% 0; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 10;
+    max-width: min(92vw, 520px); padding: 10px 16px; border-radius: 8px;
+    background: var(--murekkep); color: var(--yuzey); font-size: 0.9rem; box-shadow: var(--golge);
+  }
+
+  @media (max-width: 560px) {
+    .birak-alan { padding: 22px 18px 22px 64px; }
+    .birak-alan svg { left: 16px; width: 32px; height: 32px; }
+    .fis-ust, .fis-bilgi, .mutabakat, .fis-eylem, .fis-mesaj, .sifre { padding-inline: 16px; }
+    .notlar { padding-inline: 34px 16px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<main class="masa" lang="tr">
+  <header class="ust">
+    <div>
+      <p class="ust-etiket">Muhasebe Araçları</p>
+      <h1>Ekstre Dönüştürücü</h1>
+      <p class="ust-aciklama">Banka PDF ekstresini Zirve Nova’ya aktarılacak Excel’e çevirir: <b>Tarih</b>, <b>Açıklama</b>, <b>Tutar</b> (giren artı, çıkan eksi) ve <b>Evrak No</b>.</p>
+    </div>
+    <p class="gizlilik"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>Dosyalar bu bilgisayarda işlenir, hiçbir yere yüklenmez.</p>
+  </header>
+
+  <section class="birak" aria-label="Ekstre ekleme">
+    <label class="birak-alan" id="birakAlan" for="dosyaSec">
+      <input class="gorunmez" type="file" id="dosyaSec" accept="application/pdf,.pdf" multiple>
+      <svg viewBox="0 0 36 36" aria-hidden="true"><path d="M9 4h13l7 7v21H9z"/><path d="M22 4v7h7"/><path d="M19 15v11M14.5 21.5 19 26l4.5-4.5"/></svg>
+      <span class="birak-baslik">PDF ekstreleri buraya bırakın</span>
+      <span class="birak-alt">ya da <u>dosya seçin</u> · birden çok dosya bırakabilirsiniz</span>
+    </label>
+    <div class="secenekler">
+      <label for="siraNo"><input type="checkbox" id="siraNo">Evrak numarası olmayan satırlara sıra numarası ver</label>
+      <label for="icVirman"><input type="checkbox" id="icVirman">Bakiyeyi değiştirmeyen iç virmanları da ekle (ör. KMH borcu tahsilatı)</label>
+    </div>
+  </section>
+
+  <section class="sonuclar" aria-live="polite">
+    <div class="arac-cubugu" id="aracCubugu" hidden>
+      <p id="ozetMetin"></p>
+      <div>
+        <button class="ikincil" type="button" id="tumunuIndir" hidden>Tümünü indir (.zip)</button>
+        <button class="sessiz" type="button" id="temizle">Listeyi temizle</button>
+      </div>
+    </div>
+    <div id="liste"></div>
+  </section>
+
+  <footer class="alt">
+    <p><b>Tanınan biçimler:</b> Akbank, Halkbank (iki biçim), İş Bankası, Kuveyt Türk, QNB, TEB, Vakıfbank, Yapı Kredi, Ziraat Bankası. Diğer bankaların ekstreleri genel okuyucuyla denenir.</p>
+    <p><b>Bakiye kontrolü:</b> her satırda önceki bakiyeye tutar eklenir ve sonuç ekstredeki bakiyeyle karşılaştırılır. Tutmayan satır işaretlenir; kontrol tutarlıysa tarih, tutar ve işaretler ekstreyle birebir aynıdır.</p>
+    <p><b>Excel biçimi:</b> tek sayfa, ilk satır başlık; tarih gg.aa.yyyy, tutar sayı, evrak no metin.</p>
+  </footer>
+
+  <div class="bildirim" id="bildirim" role="status" hidden></div>
+</main>
+<script type="module">
+globalThis.pdfjsYukle = async () => {
+  const lib = await import('./pdfjs/pdf.min.mjs');
+  lib.GlobalWorkerOptions.workerSrc = new URL('./pdfjs/pdf.worker.min.mjs', document.baseURI).href;
+  return lib;
+};
+
+// ---------- ortak.js
+// Ortak yardımcılar: metin sadeleştirme, tutar ve tarih okuma.
+// Tutarlar her yerde kuruş cinsinden tam sayı olarak tutulur (yuvarlama hatası olmasın diye).
+
+const TR_HARF = {
+  'İ': 'I', 'ı': 'I', 'i': 'I', 'Ş': 'S', 'ş': 'S', 'Ğ': 'G', 'ğ': 'G',
+  'Ü': 'U', 'ü': 'U', 'Ö': 'O', 'ö': 'O', 'Ç': 'C', 'ç': 'C',
+  'Â': 'A', 'â': 'A', 'Î': 'I', 'î': 'I', 'Û': 'U', 'û': 'U',
+};
+
+/** Karşılaştırma için metni büyük harfe çevirir, Türkçe harfleri sadeleştirir (uzunluk korunur). */
+function katla(s) {
+  return String(s ?? '').replace(/[İıiŞşĞğÜüÖöÇçÂâÎîÛû]/g, (c) => TR_HARF[c]).toUpperCase();
+}
+
+/** "1.234,56", "1,234.56", "-15.000,00", "250,00 -" gibi yazımları kuruşa çevirir. Okuyamazsa null. */
+function kurusOku(s) {
+  if (s == null) return null;
+  let t = String(s).replace(/\s+/g, '').replace(/(TL|TRY|₺)$/i, '');
+  if (!t) return null;
+  let eksi = false;
+  if (/^\(.*\)$/.test(t)) { eksi = true; t = t.slice(1, -1); }
+  if (/^[-−–]/.test(t)) { eksi = true; t = t.slice(1); } else if (t.startsWith('+')) t = t.slice(1);
+  if (/[-−–]$/.test(t)) { eksi = true; t = t.slice(0, -1); } else if (t.endsWith('+')) t = t.slice(0, -1);
+  if (!/^\d[\d.,]*$/.test(t)) return null;
+  let tam = t;
+  let kesir = '';
+  const m = t.match(/[.,](\d{1,2})$/);
+  if (m) { tam = t.slice(0, -m[0].length); kesir = m[1]; }
+  tam = tam.replace(/[.,]/g, '');
+  if (!/^\d+$/.test(tam)) return null;
+  const k = Number(tam) * 100 + Number((kesir + '00').slice(0, 2));
+  return eksi ? -k : k;
+}
+
+/** Bir hücrede tutarın yanında başka yazı da varsa (ör. "44.257,99 A") ilk sayıyı kuruş olarak bulur. */
+function sayiBul(s) {
+  const tam = kurusOku(s);
+  if (tam != null) return tam;
+  const p = String(s ?? '').split(/\s+/).filter(Boolean);
+  for (let i = 0; i < p.length; i++) {
+    let v = kurusOku(p[i]);
+    if (v == null && /^[-−–+]$/.test(p[i]) && i + 1 < p.length) v = kurusOku(p[i] + p[i + 1]);
+    if (v != null) return v;
+  }
+  return null;
+}
+
+/** Metin içindeki ilk gg.aa.yyyy / gg/aa/yyyy / gg-aa-yyyy / gg.aa.yy tarihini okur. */
+function tarihOku(s) {
+  const m = String(s ?? '').match(/(?<!\d)(\d{1,2})[./-](\d{1,2})[./-](\d{4}|\d{2})(?!\d)/);
+  if (!m) return null;
+  const g = Number(m[1]);
+  const a = Number(m[2]);
+  let y = Number(m[3]);
+  if (m[3].length === 2) y += 2000;
+  if (a < 1 || a > 12 || g < 1 || g > 31) return null;
+  return { g, a, y, sira: y * 10000 + a * 100 + g };
+}
+
+/** Tarihi gg.aa.yyyy biçiminde yazar. */
+function tarihYaz(t) {
+  return `${String(t.g).padStart(2, '0')}.${String(t.a).padStart(2, '0')}.${t.y}`;
+}
+
+/** Kuruşu "1.234,56" biçiminde yazar. */
+function tutarYaz(k) {
+  if (k == null) return '';
+  const eksi = k < 0;
+  const mutlak = Math.abs(k);
+  const tam = Math.floor(mutlak / 100).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  const kurus = String(mutlak % 100).padStart(2, '0');
+  return `${eksi ? '-' : ''}${tam},${kurus}`;
+}
+
+/** Boşlukları sadeleştirir. */
+function sade(s) {
+  return String(s ?? '').replace(/\s+/g, ' ').trim();
+}
+
+// ---------- bankalar.js
+// Banka biçimleri.
+// Her biçim: sütun başlıkları (sadeleştirilmiş metinde aranır), hareket satırının tarih deseni,
+// açıklamanın çok satırlı olduğunda nereye taştığı (yerlesim) ve sayfa altı yazıları.
+//   yerlesim: 'alt'   → devam satırları hareket satırının altında
+//             'ust'   → devam satırları hareket satırının üstünde
+//             'yakin' → devam satırları hareket satırının üstünde ve altında (ortalanmış)
+
+
+/** Kelime sınırlı başlık deseni (boşluklar esnek). */
+function K(metin) {
+  const kacis = metin.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&').replace(/ /g, '\\s*');
+  return new RegExp(`(?<![A-Z0-9])${kacis}(?![A-Z0-9])`);
+}
+const b = (k, metin, ek = {}) => ({ k, r: K(metin), ...ek });
+const r = (k, desen, ek = {}) => ({ k, r: desen, ...ek });
+
+function isaretle(v, eksi) {
+  if (v == null) return null;
+  return eksi ? -Math.abs(v) : Math.abs(v);
+}
+
+function birlestir(a, b2, ayrac = ' - ') {
+  return [a, b2].map(sade).filter(Boolean).join(ayrac);
+}
+
+const BANKALAR = [
+  {
+    kod: 'akbank',
+    ad: 'Akbank',
+    imzalar: [/AKBANK T\.A\.S/, /AKBANK\.COM/],
+    basliklar: [
+      b('tarih', 'TARIH'), b('saat', 'SAAT'), b('valor', 'VALOR'), b('evrak', 'FIS NO'),
+      b('tutar', 'MEBLAG'), b('bakiye', 'BAKIYE'), b('ba', 'B/A'), b('aciklama', 'ACIKLAMA'),
+    ],
+    zorunlu: ['tarih', 'evrak', 'tutar', 'bakiye', 'ba', 'aciklama'],
+    tarihDeseni: /^\d{2}\.\d{2}\.\d{4}$/,
+    yerlesim: 'alt',
+    altBilgi: [/^AKBANK T\.A\.S/, /^\d+ \/ \d+$/],
+    // Meblağ işaretsiz; B (borç) çıkış, A (alacak) giriş.
+    kayit: (a) => ({
+      tutar: isaretle(kurusOku(a.tutar), katla(a.ba).trim() === 'B'),
+      bakiye: kurusOku(a.bakiye),
+      aciklama: a.aciklama,
+      evrak: a.evrak,
+    }),
+  },
+  {
+    kod: 'vakifbank',
+    ad: 'Vakıfbank',
+    imzalar: [/VAKIFBANK\.COM/, /VAKIFLAR BANKASI/],
+    basliklar: [
+      b('tarih', 'TARIH'), b('saat', 'SAAT'), b('evrak', 'ISLEM NO'), b('tutar', 'MIKTAR'),
+      b('bakiye', 'BAKIYE'), b('islemAdi', 'ISLEM ADI'),
+    ],
+    zorunlu: ['tarih', 'evrak', 'tutar', 'bakiye', 'islemAdi'],
+    tarihDeseni: /^\d{2}\.\d{2}\.\d{4}$/,
+    yerlesim: 'yakin',
+    // Satır başından başlayan devam satırları açıklama detayıdır (hareketin altında);
+    // İşlem Adı sütunundaki taşmalar ise hareket satırına ortalanmıştır.
+    devam: (satir, kol) => {
+      const ia = kol.find((c) => c.k === 'islemAdi');
+      return ia && satir.ogeler[0].x < ia.sol - 2 ? { mod: 'alt', alan: 'detay' } : { mod: 'yakin' };
+    },
+    altBilgi: [/DEKONT YERINE KULLANILAMAZ/, /VAKIFBANK\.COM/, /^SF\.\s*\d/],
+    kayit: (a) => ({
+      tutar: kurusOku(a.tutar),
+      bakiye: kurusOku(a.bakiye),
+      aciklama: birlestir(a.islemAdi, a.detay),
+      evrak: a.evrak,
+    }),
+  },
+  {
+    kod: 'yapikredi',
+    ad: 'Yapı Kredi',
+    imzalar: [/YAPI VE KREDI BANKASI/, /YAPIKREDI\.COM/],
+    basliklar: [
+      b('tarih', 'TARIH'), b('valor', 'VALOR'), b('aciklama', 'ACIKLAMA'), b('tutar', 'ISLEM TUTARI'),
+      b('saat', 'ISLEM SAATI'), b('bakiye', 'BAKIYE'), b('evrak', 'DEKONT NO'),
+    ],
+    zorunlu: ['tarih', 'aciklama', 'tutar', 'saat', 'bakiye', 'evrak'],
+    tarihDeseni: /^\d{2}\.\d{2}\.\d{4}$/,
+    yerlesim: 'alt',
+    altBilgi: [/^YAPI VE KREDI BANKASI/, /^ISLETMENIN MERKEZI/, /^\d+ \/ \d+$/],
+    // Açılış, gün sonu ve kapanış bakiyesi satırları hareket değildir.
+    kayit: (a) => {
+      const ac = katla(a.aciklama);
+      let tur;
+      if (/^ACILIS BAKIYESI/.test(ac)) tur = 'acilis';
+      else if (/^KAPANIS BAKIYESI/.test(ac)) tur = 'kapanis';
+      else if (/^GUNSONU BAKIYESI/.test(ac)) tur = 'atla';
+      return { tur, tutar: kurusOku(a.tutar), bakiye: kurusOku(a.bakiye), aciklama: a.aciklama, evrak: a.evrak };
+    },
+  },
+  {
+    kod: 'qnb',
+    ad: 'QNB',
+    imzalar: [/KREDIGO/, /QNB FINANSBANK A\.S/],
+    basliklar: [
+      b('tarih', 'ISLEM TARIHI'), b('kanal', 'KANAL'), b('aciklama', 'ISLEM ACIKLAMASI'),
+      b('tutar', 'TUTAR'), b('bakiye', 'BAKIYE'),
+    ],
+    zorunlu: ['tarih', 'kanal', 'aciklama', 'tutar', 'bakiye'],
+    tarihDeseni: /^\d{2}\/\d{2}\/\d{4}$/,
+    yerlesim: 'yakin',
+    altBilgi: [/^SAYFA\s*:/, /^BU DOKUMAN BILGI AMACLI/],
+  },
+  {
+    kod: 'halkbank',
+    ad: 'Halkbank',
+    imzalar: [/HALK BANKASI/, /HALKBANK\.COM/],
+    basliklar: [
+      b('tarih', 'ISLEM TARIHI'), b('aciklama', 'ACIKLAMA'), b('tutar', 'ISLEM TUTARI'),
+      b('bakiye', 'BAKIYE'), b('evrak', 'DEKONT NO'),
+    ],
+    zorunlu: ['tarih', 'aciklama', 'tutar', 'bakiye', 'evrak'],
+    tarihDeseni: /^\d{2}-\d{2}-\d{4}$/,
+    yerlesim: 'alt',
+    altBilgi: [/^SAYFA NO/, /^TURKIYE HALK BANKASI/],
+  },
+  {
+    kod: 'halkbank-eski',
+    ad: 'Halkbank',
+    imzalar: [/HALK BANKASI/, /HALKBANK/],
+    basliklar: [
+      b('tarih', 'ISLEM TARIHI'), b('valor', 'VALOR TARIHI'), b('tutar', 'ISLEM TUTARI'),
+      r('tutarIsaret', /\(\+\/-\)/), b('bakiye', 'BAKIYE'), r('bakiyeIsaret', /\(\+\/-\)/),
+      b('aciklama', 'ACIKLAMA'),
+    ],
+    zorunlu: ['tarih', 'tutar', 'tutarIsaret', 'bakiye', 'aciklama'],
+    tarihDeseni: /^\d{2}\.\d{2}\.\d{4}$/,
+    yerlesim: 'alt',
+    altBilgi: [/^TURKIYE HALK BANKASI/, /^EKSTRENIZE/],
+    // Tutar ve bakiyenin işareti ayrı sütunda (+ / -).
+    kayit: (a) => ({
+      tutar: isaretle(kurusOku(a.tutar), (a.tutarIsaret || '').includes('-')),
+      bakiye: isaretle(kurusOku(a.bakiye), (a.bakiyeIsaret || '').includes('-')),
+      aciklama: a.aciklama,
+      evrak: '',
+    }),
+  },
+  {
+    kod: 'isbank',
+    ad: 'İş Bankası',
+    imzalar: [/IS BANKASI/, /ISBANK\.COM/],
+    basliklar: [
+      b('tarih', 'TARIH/SAAT'), b('kanal', 'KANAL/SUBE'), b('tutar', 'ISLEM TUTARI'), b('bakiye', 'BAKIYE'),
+      b('ekBakiye', 'BAKIYESI'), r('islemKodu', /(?<![A-Z0-9])ISLEM(?=\s*ISLEM\s*TIPI)/), b('tip', 'ISLEM TIPI'),
+      b('aciklama', 'ACIKLAMA'),
+    ],
+    zorunlu: ['tarih', 'tutar', 'bakiye', 'tip', 'aciklama'],
+    tarihDeseni: /^\d{2}\/\d{2}\/\d{4}-\d{2}:\d{2}(:\d{2})?$/,
+    yerlesim: 'ust',
+    altBilgi: [/^\(\*\)/, /^BU HESAP OZETI/, /IS BANKASI AS/, /^SAYFA\s*\d+\s*\/\s*\d+/],
+    // Ek hesap (KMH) kullanılınca "Bakiye" 0 görünür, eksi kısım "Ek Hesap Bakiyesi"ndedir; gerçek bakiye ikisinin toplamı.
+    kayit: (a) => {
+      const bakiye = kurusOku(a.bakiye);
+      return {
+        tutar: kurusOku(a.tutar),
+        bakiye: bakiye == null ? null : bakiye + (kurusOku(a.ekBakiye) || 0),
+        aciklama: birlestir(a.tip, a.aciklama),
+        evrak: '',
+      };
+    },
+  },
+  {
+    kod: 'teb',
+    ad: 'TEB',
+    imzalar: [/TURK EKONOMI/, /TEB\.COM\.TR/],
+    basliklar: [
+      b('tarih', 'TARIH'), b('valor', 'VALOR'), b('saat', 'SAAT'), b('aciklama', 'ACIKLAMA'),
+      b('ozel', 'ISLEM OZEL'), b('tip', 'ISLEM TIPI'), b('tutar', 'TUTAR'), b('bakiye', 'BAKIYE'),
+      b('evrak', 'DEKONT NO'), b('alici', 'ALICI'),
+    ],
+    zorunlu: ['tarih', 'aciklama', 'tutar', 'bakiye', 'evrak'],
+    tarihDeseni: /^\d{2}\/\d{2}\/\d{4}$/,
+    yerlesim: 'alt',
+    altBilgi: [/TURK EKONOM/, /TEB\.COM\.TR/],
+    // Telefondan yazdırılan TEB PDF'lerinde küçük "i" harfi "#" olarak geliyor.
+    duzelt: (s) => s.replace(/#/g, 'i'),
+    kayit: (a) => ({
+      tutar: kurusOku(a.tutar),
+      bakiye: kurusOku(a.bakiye),
+      aciklama: birlestir(a.aciklama, a.ozel && a.ozel !== '-' ? a.ozel : '', ' / '),
+      evrak: a.evrak,
+    }),
+  },
+  {
+    kod: 'ziraat',
+    ad: 'Ziraat Bankası',
+    imzalar: [/ZIRAATBANK\.COM/, /ZIRAAT BANKASI ANONIM/],
+    basliklar: [
+      b('tarih', 'TARIH'), b('evrak', 'REFERANS'), b('tutar', 'TUTAR'), b('bakiye', 'BAKIYE'),
+      b('aciklama', 'ACIKLAMA'),
+    ],
+    zorunlu: ['tarih', 'evrak', 'tutar', 'bakiye', 'aciklama'],
+    tarihDeseni: /^\d{2}\.\d{2}\.(\d{2}|\d{4})$/,
+    yerlesim: 'alt',
+    altBilgi: [/^TARAFLAR ARASINDA/, /^SAYFA NO/],
+  },
+  {
+    kod: 'kuveytturk',
+    ad: 'Kuveyt Türk',
+    imzalar: [/KUVEYT TURK/],
+    basliklar: [
+      b('aciklama', 'ACIKLAMA'), b('tutar', 'TUTAR'), b('bakiye', 'BAKIYE'),
+      b('tarih', 'TARIHI', { komsu: true }),
+    ],
+    zorunlu: ['tarih', 'aciklama', 'tutar', 'bakiye'],
+    anaHucre: 3,
+    tarihDeseni: /^\d{2}\.\d{2}\.\d{4}$/,
+    yerlesim: 'yakin',
+    altBilgi: [],
+    kayit: (a) => ({
+      tur: /^ACILIS$/.test(katla(a.aciklama).trim()) ? 'acilis' : undefined,
+      tutar: kurusOku(a.tutar),
+      bakiye: kurusOku(a.bakiye),
+      aciklama: a.aciklama,
+      evrak: '',
+    }),
+  },
+];
+
+/**
+ * Tanınmayan bankalar için genel okuyucu: yaygın başlık adlarını arar.
+ * Bilinen her sütunu ayrı tanımlar ki saat, valör, kanal gibi değerler tutar/bakiye sütununa karışmasın.
+ * Tutarlar işaretsizse işaret bakiye farkından çıkarılır (motor tarafında).
+ */
+const GENEL_BANKA = {
+  kod: 'genel',
+  ad: 'Tanınmayan banka',
+  genel: true,
+  basliklar: [
+    r('tarih', /(?<![A-Z0-9])(ISLEM\s*TARIHI|TARIH\s*\/\s*SAAT|TARIHI?)(?![A-Z0-9])/, { komsu: true }),
+    r('valor', /(?<![A-Z0-9])VALOR(\s*TARIHI)?(?![A-Z0-9])/),
+    r('saat', /(?<![A-Z0-9])(ISLEM\s*)?SAATI?(?![A-Z0-9])/),
+    r('kanal', /(?<![A-Z0-9])(KANAL(\s*\/\s*SUBE)?|SUBE)(?![A-Z0-9])/),
+    r('evrak', /(?<![A-Z0-9])(DEKONT\s*NO|FIS\s*NO|EVRAK\s*NO|REFERANS(\s*NO)?|ISLEM\s*NO|REF\.?\s*NO)(?![A-Z0-9])/),
+    r('tutar', /(?<![A-Z0-9])(ISLEM\s*TUTARI|TUTARI?|MEBLAG|MIKTAR)(?![A-Z0-9])/),
+    r('isaret', /\(\+\/-\)|(?<![A-Z0-9])B\/A(?![A-Z0-9])/),
+    r('borc', /(?<![A-Z0-9])(BORC|CIKAN|CEKILEN)(?![A-Z0-9])/),
+    r('alacak', /(?<![A-Z0-9])(ALACAK|GIREN|YATAN)(?![A-Z0-9])/),
+    r('bakiye', /(?<![A-Z0-9])BAKIYE(?![A-Z0-9])/),
+    r('bakiyeIsaret', /\(\+\/-\)/),
+    r('ekBakiye', /(?<![A-Z0-9])(EK\s*HESAP\s*)?BAKIYESI(?![A-Z0-9])/),
+    r('tip', /(?<![A-Z0-9])ISLEM\s*(TIPI|TURU|ADI)(?![A-Z0-9])/),
+    r('ozel', /(?<![A-Z0-9])(ISLEM\s*)?OZEL(\s*ACIKLAMA(SI)?)?(?![A-Z0-9])/),
+    r('alici', /(?<![A-Z0-9])(ALICI|GONDEREN|KARSI\s*TARAF)(?![A-Z0-9])/),
+    r('aciklama', /(?<![A-Z0-9])(ISLEM\s*)?ACIKLAMA(SI)?(?![A-Z0-9])/),
+  ],
+  zorunlu: ['tarih', ['tutar', 'borc', 'alacak'], ['aciklama', 'tip']],
+  tarihDeseni: /^\d{1,2}[./-]\d{1,2}[./-]\d{2,4}/,
+  yerlesim: 'yakin',
+  altBilgi: [],
+  kayit: (a) => {
+    let tutar = sayiBul(a.tutar);
+    const isaret = katla(a.isaret || '').trim();
+    if (tutar != null) {
+      if (isaret === 'B' || isaret.includes('-')) tutar = -Math.abs(tutar);
+      else if (isaret === 'A' || isaret.includes('+')) tutar = Math.abs(tutar);
+    } else if (a.borc || a.alacak) {
+      tutar = Math.abs(sayiBul(a.alacak) || 0) - Math.abs(sayiBul(a.borc) || 0);
+    }
+    let bakiye = sayiBul(a.bakiye);
+    if (bakiye != null && (a.bakiyeIsaret || '').includes('-')) bakiye = -Math.abs(bakiye);
+    const ek = sayiBul(a.ekBakiye);
+    if (bakiye != null && ek != null && ek < 0) bakiye += ek;
+    const ozel = a.ozel && a.ozel !== '-' ? a.ozel : '';
+    return { tutar, bakiye, aciklama: birlestir(birlestir(a.tip, a.aciklama), ozel, ' / '), evrak: a.evrak };
+  },
+};
+
+// ---------- motor.js
+// Ekstre okuma motoru.
+// PDF metnini konumlarıyla satırlara, satırları başlığa göre sütunlara, sütunları hareketlere çevirir;
+// ardından her satırı bakiye zinciriyle doğrular (önceki bakiye + tutar = satır bakiyesi).
+
+
+
+// ---------------------------------------------------------------- PDF metni
+
+/** pdf.js belgesinden sayfa sayfa metin parçalarını (x, y, genişlik, yazı boyu) çıkarır. y yukarıdan aşağı artar. */
+async function sayfalariOku(pdf) {
+  const sayfalar = [];
+  for (let no = 1; no <= pdf.numPages; no++) {
+    const sayfa = await pdf.getPage(no);
+    const vp = sayfa.getViewport({ scale: 1 });
+    const icerik = await sayfa.getTextContent();
+    const ogeler = [];
+    for (const it of icerik.items) {
+      if (typeof it.str !== 'string' || !it.str.trim()) continue;
+      const m = carp(vp.transform, it.transform);
+      if (Math.abs(m[1]) > 0.01 || Math.abs(m[2]) > 0.01 || m[0] <= 0) continue; // yatay olmayan yazıyı atla
+      const fs = Math.abs(m[3]) || Math.abs(m[0]) || 8;
+      // Baştaki/sondaki boşluklar genişliğe dahil; konumu yalnızca yazının kapladığı alana daralt.
+      const ham = it.str;
+      const bas = ham.length - ham.trimStart().length;
+      const son = ham.length - ham.trimEnd().length;
+      const harf = it.width / ham.length;
+      ogeler.push({ s: ham.trim(), x: m[4] + bas * harf, y: m[5], w: it.width - (bas + son) * harf, fs });
+    }
+    sayfalar.push({ no, ogeler });
+    sayfa.cleanup?.();
+  }
+  return sayfalar;
+}
+
+function carp(a, b) {
+  return [
+    a[0] * b[0] + a[2] * b[1], a[1] * b[0] + a[3] * b[1],
+    a[0] * b[2] + a[2] * b[3], a[1] * b[2] + a[3] * b[3],
+    a[0] * b[4] + a[2] * b[5] + a[4], a[1] * b[4] + a[3] * b[5] + a[5],
+  ];
+}
+
+// ---------------------------------------------------------------- satır ve hücreler
+
+/** Aynı hizadaki parçaları satırlara toplar; her satırda yakın parçaları hücrelere birleştirir. */
+function satirlaraAyir(ogeler, sayfaNo) {
+  const sirali = [...ogeler].sort((p, q) => p.y - q.y || p.x - q.x);
+  const satirlar = [];
+  for (const o of sirali) {
+    const son = satirlar[satirlar.length - 1];
+    if (son && o.y - son.y <= Math.max(1.5, 0.22 * o.fs)) son.ogeler.push(o);
+    else satirlar.push({ y: o.y, sayfa: sayfaNo, ogeler: [o] });
+  }
+  for (const s of satirlar) {
+    s.ogeler.sort((p, q) => p.x - q.x);
+    s.hucreler = hucrele(s.ogeler);
+    s.metin = s.hucreler.map((h) => h.s).join(' ');
+    s.km = katla(s.metin);
+  }
+  return satirlar;
+}
+
+/** Soldan sağa sıralı parçaları, aralarındaki boşluğa bakarak hücrelere birleştirir. */
+function hucrele(ogeler) {
+  const out = [];
+  for (const o of ogeler) {
+    const s = o.s.replace(/\s+/g, ' ');
+    const son = out[out.length - 1];
+    if (son) {
+      const bosluk = o.x - son.x2;
+      if (bosluk < o.fs * 0.55) {
+        const ara = bosluk > o.fs * 0.12 || son.s.endsWith(' ') || s.startsWith(' ') ? ' ' : '';
+        son.s += ara + s;
+        son.x2 = Math.max(son.x2, o.x + o.w);
+        continue;
+      }
+    }
+    out.push({ s, x: o.x, x2: o.x + o.w });
+  }
+  for (const h of out) h.s = sade(h.s);
+  return out.filter((h) => h.s);
+}
+
+// ---------------------------------------------------------------- başlık satırı
+
+/** Satır metnini (sadeleştirilmiş) ve her karakterin yaklaşık x konumunu verir. */
+function konumluMetin(satir) {
+  if (satir._km) return satir._km;
+  let metin = '';
+  const xs = [];
+  satir.hucreler.forEach((h, i) => {
+    if (i > 0) { metin += ' '; xs.push(h.x); }
+    const k = katla(h.s);
+    for (let j = 0; j < k.length; j++) { metin += k[j]; xs.push(h.x + ((h.x2 - h.x) * j) / k.length); }
+  });
+  const son = satir.hucreler[satir.hucreler.length - 1];
+  xs.push(son ? son.x2 : 0);
+  satir._km = { metin, xs };
+  return satir._km;
+}
+
+function basligiEsle(ana, komsular, basliklar) {
+  const dolu = new Map();
+  const kolonlar = {};
+  const kullanilan = new Set([ana]);
+  for (const b of basliklar) {
+    const adaylar = b.komsu ? [ana, ...komsular] : [ana];
+    for (const s of adaylar) {
+      const km = konumluMetin(s);
+      const alanlar = dolu.get(s) || [];
+      const r = new RegExp(b.r.source, 'g');
+      let m;
+      let bulundu = null;
+      while ((m = r.exec(km.metin))) {
+        if (!m[0].length) { r.lastIndex++; continue; }
+        const bas = m.index;
+        const son = m.index + m[0].length;
+        if (alanlar.some(([p, q]) => bas < q && son > p)) continue;
+        bulundu = [bas, son];
+        break;
+      }
+      if (bulundu) {
+        alanlar.push(bulundu);
+        dolu.set(s, alanlar);
+        kolonlar[b.k] = { x1: km.xs[bulundu[0]], x2: km.xs[bulundu[1]] };
+        kullanilan.add(s);
+        break;
+      }
+    }
+  }
+  return { kolonlar, kullanilan };
+}
+
+function zorunluTamam(banka, kolonlar) {
+  return banka.zorunlu.every((z) => (Array.isArray(z) ? z.some((k) => kolonlar[k]) : kolonlar[z]));
+}
+
+const BASLIK_DEVAM = /^(\s|ACIKLAMASI|BAKIYESI|TARIHI|TARIH|NO|NUMARASI|TUTARI|ADI|SAATI|TIPI|KODU|\(\+\/-\)|\*)+$/;
+
+/** Bir sayfada bankanın sütun başlığı satırını arar. */
+function sayfadaBaslikBul(satirlar, banka) {
+  let enIyi = null;
+  for (const ana of satirlar) {
+    if (banka.anaHucre && ana.hucreler.length !== banka.anaHucre) continue;
+    if (ana.hucreler.length < 2) continue;
+    const komsular = satirlar.filter((s) => s !== ana && Math.abs(s.y - ana.y) <= 14);
+    const { kolonlar, kullanilan } = basligiEsle(ana, komsular, banka.basliklar);
+    if (!zorunluTamam(banka, kolonlar)) continue;
+    const puan = Object.keys(kolonlar).length;
+    if (!enIyi || puan > enIyi.puan) enIyi = { kolonlar, puan, ana, kullanilan };
+  }
+  if (!enIyi) return null;
+  let alt = Math.max(...[...enIyi.kullanilan].map((s) => s.y));
+  for (const s of satirlar) {
+    if (s.y > alt && s.y - alt <= 12 && BASLIK_DEVAM.test(s.km)) alt = s.y;
+  }
+  enIyi.alt = alt;
+  return enIyi;
+}
+
+// ---------------------------------------------------------------- sütun sınırları
+
+/**
+ * Sütun sınırlarını belirler: başlıklar sütunların sırasını ve yaklaşık yerini verir,
+ * sınır ise hareket satırlarındaki gerçek boşluğa (hiçbir yazının geçmediği x aralığına) oturtulur.
+ */
+function sinirHesapla(kolonlar, capalar) {
+  const kol = Object.entries(kolonlar)
+    .map(([k, v]) => ({ k, x1: v.x1, x2: v.x2, m: (v.x1 + v.x2) / 2 }))
+    .sort((a, b) => a.m - b.m);
+  const araliklar = capalar.flatMap((s) => s.ogeler.map((o) => [o.x, o.x + o.w])).sort((a, b) => a[0] - b[0]);
+  const birlesik = [];
+  for (const [a, b] of araliklar) {
+    const son = birlesik[birlesik.length - 1];
+    if (son && a <= son[1] + 0.8) son[1] = Math.max(son[1], b);
+    else birlesik.push([a, b]);
+  }
+  const bosluklar = [];
+  for (let i = 0; i < birlesik.length - 1; i++) bosluklar.push([birlesik[i][1], birlesik[i + 1][0]]);
+  for (let i = 0; i < kol.length - 1; i++) {
+    const A = kol[i];
+    const B = kol[i + 1];
+    const g = A.x2 <= B.x1 ? (A.x2 + B.x1) / 2 : (A.m + B.m) / 2;
+    // Önce iki başlığın ortası arasındaki boşluklara, bulunamazsa iki başlığın dış kenarları arasına bak.
+    const ara = (sol, sag) => {
+      let sinir = null;
+      let enYakin = Infinity;
+      for (const [p, q] of bosluklar) {
+        if (q - p < 1.2) continue;
+        const orta = (p + q) / 2;
+        if (orta <= sol || orta >= sag) continue;
+        const icinde = g >= p && g <= q;
+        const uzak = icinde ? 0 : Math.min(Math.abs(g - p), Math.abs(g - q));
+        if (uzak < enYakin) { enYakin = uzak; sinir = icinde ? g : orta; }
+      }
+      return sinir;
+    };
+    A.sag = ara(A.m, B.m) ?? ara(A.x1, B.x2) ?? g;
+  }
+  kol.forEach((c, i) => { c.sol = i === 0 ? -Infinity : kol[i - 1].sag; });
+  if (kol.length) kol[kol.length - 1].sag = Infinity;
+  return kol;
+}
+
+function kolonBul(kol, o) {
+  const x = o.x + Math.min(1, o.w / 2);
+  const c = kol.find((c) => x >= c.sol && x < c.sag);
+  return c ? c.k : null;
+}
+
+/** Parçaları sütunlara dağıtıp her sütunun metnini (satır sırasıyla) birleştirir. */
+function alanlaraDagit(parcalar, kol) {
+  const kutular = {};
+  for (const { satir, alan } of parcalar) {
+    for (const o of satir.ogeler) {
+      const k = alan || kolonBul(kol, o);
+      if (!k) continue;
+      (kutular[k] ||= []).push({ ...o, sy: satir.y, sp: satir.sayfa });
+    }
+  }
+  const sonuc = {};
+  for (const [k, ogeler] of Object.entries(kutular)) {
+    ogeler.sort((a, b) => a.sp - b.sp || a.sy - b.sy || a.x - b.x);
+    const parcaMetin = [];
+    let grup = [];
+    for (const o of ogeler) {
+      if (grup.length && (grup[0].sy !== o.sy || grup[0].sp !== o.sp)) {
+        parcaMetin.push(hucrele(grup).map((h) => h.s).join(' '));
+        grup = [];
+      }
+      grup.push(o);
+    }
+    if (grup.length) parcaMetin.push(hucrele(grup).map((h) => h.s).join(' '));
+    sonuc[k] = sade(parcaMetin.join(' '));
+  }
+  return sonuc;
+}
+
+// ---------------------------------------------------------------- hareketleri çıkarma
+
+const GENEL_OZEL = [
+  { r: /(DEVREDEN|DEVIR|ONCEKI)\s*BAKIYE/, tur: 'acilis' },
+  { r: /ACILIS\s*BAKIYESI/, tur: 'acilis' },
+  { r: /(KAPANIS|DONEM\s*SONU)\s*BAKIYESI?/, tur: 'kapanis' },
+];
+
+function capaMi(s, kolonlar, banka) {
+  const ilk = s.hucreler[0];
+  if (!ilk || s.hucreler.length < 2) return false;
+  if (!banka.tarihDeseni.test(ilk.s) || !tarihOku(ilk.s)) return false;
+  const t = kolonlar.tarih;
+  if (t && (ilk.x > t.x2 + 25 || ilk.x2 < t.x1 - 60)) return false;
+  return true;
+}
+
+function ozelSatir(s, banka, kol) {
+  const eslesen = [...(banka.ozelSatirlar || []), ...GENEL_OZEL].find((o) => o.r.test(s.km));
+  if (!eslesen) return null;
+  const alanlar = alanlaraDagit([{ satir: s }], kol);
+  let deger = kurusOku(alanlar.bakiye);
+  if (deger == null) {
+    for (let i = s.hucreler.length - 1; i >= 0 && deger == null; i--) deger = kurusOku(s.hucreler[i].s);
+  }
+  return { tur: eslesen.tur, deger };
+}
+
+function once(a, b) {
+  return a.sayfa < b.sayfa || (a.sayfa === b.sayfa && a.y < b.y);
+}
+
+function hedefBul(s, mod, sayfaKayitlari, tumKayitlar) {
+  const oncekiBul = () => {
+    for (let i = tumKayitlar.length - 1; i >= 0; i--) if (once(tumKayitlar[i].capa, s)) return tumKayitlar[i];
+    return null;
+  };
+  if (mod === 'ust') {
+    return sayfaKayitlari.find((k) => k.capa.y > s.y) || oncekiBul();
+  }
+  if (mod === 'yakin') {
+    let enIyi = null;
+    let enAz = Infinity;
+    for (const k of sayfaKayitlari) {
+      const d = Math.abs(k.capa.y - s.y) + (k.capa.y > s.y ? 0.01 : 0); // eşitlikte üsttekini seç
+      if (d < enAz) { enAz = d; enIyi = k; }
+    }
+    return enIyi || oncekiBul();
+  }
+  return oncekiBul();
+}
+
+/** Seçilen bankanın kurallarıyla tüm sayfalardan ham kayıtları çıkarır. */
+function kayitlariCikar(tumSatirlar, banka) {
+  const kayitlar = [];
+  const ozeller = [];
+  let sonKolonlar = null;
+  for (const satirlar of tumSatirlar) {
+    const baslik = sayfadaBaslikBul(satirlar, banka);
+    let kolonlar;
+    let govde;
+    if (baslik) {
+      kolonlar = baslik.kolonlar;
+      sonKolonlar = kolonlar;
+      govde = satirlar.filter((s) => s.y > baslik.alt + 0.5);
+    } else if (sonKolonlar) {
+      kolonlar = sonKolonlar;
+      govde = satirlar;
+    } else {
+      continue;
+    }
+    const altBilgi = [...(banka.altBilgi || []), ...(banka.genel ? GENEL_ALT : [])];
+    const sonIdx = govde.findIndex((s) => altBilgi.some((r) => r.test(s.km)));
+    if (sonIdx >= 0) govde = govde.slice(0, sonIdx);
+    const capa = (s) => capaMi(s, kolonlar, banka);
+    if (!baslik) {
+      const ilk = govde.findIndex(capa);
+      govde = ilk >= 0 ? govde.slice(ilk) : [];
+    }
+    const capalar = govde.filter(capa);
+    const kol = sinirHesapla(kolonlar, capalar);
+    const sayfaKayitlari = [];
+    const devamlar = [];
+    for (const s of govde) {
+      if (capa(s)) {
+        const k = { capa: s, ekler: [], kol };
+        kayitlar.push(k);
+        sayfaKayitlari.push(k);
+        continue;
+      }
+      const oz = ozelSatir(s, banka, kol);
+      if (oz) { ozeller.push(oz); continue; }
+      devamlar.push(s);
+    }
+    for (const s of devamlar) {
+      const kural = banka.devam ? banka.devam(s, kol) : { mod: banka.yerlesim };
+      const hedef = hedefBul(s, kural.mod, sayfaKayitlari, kayitlar);
+      if (hedef) hedef.ekler.push({ satir: s, alan: kural.alan });
+    }
+  }
+  return { kayitlar, ozeller };
+}
+
+const GENEL_ALT = [/^SAYFA\b/, /DEKONT YERINE/, /UYUSMAZLIK HALINDE/, /KAYITLARI ESAS/];
+
+function varsayilanKayit(a) {
+  let tutar = kurusOku(a.tutar);
+  if (tutar == null && (a.borc || a.alacak)) {
+    tutar = Math.abs(kurusOku(a.alacak) || 0) - Math.abs(kurusOku(a.borc) || 0);
+  }
+  return { tutar, bakiye: kurusOku(a.bakiye), aciklama: a.aciklama, evrak: a.evrak };
+}
+
+function genelTur(aciklama) {
+  const k = katla(aciklama);
+  if (/^(DEVREDEN|DEVIR|ONCEKI)\s*BAKIYE|^ACILIS\s*BAKIYESI|^ACILIS$/.test(k)) return 'acilis';
+  if (/^(KAPANIS|DONEM\s*SONU)\s*BAKIYESI?/.test(k)) return 'kapanis';
+  if (/^GUN\s*SONU\s*BAKIYESI/.test(k)) return 'atla';
+  return 'hareket';
+}
+
+// ---------------------------------------------------------------- sıralama ve bakiye kontrolü
+
+function zincir(h, acilis) {
+  let onceki = acilis ?? (h.length && h[0].bakiye != null ? h[0].bakiye - h[0].tutar : null);
+  let hata = 0;
+  for (const r of h) {
+    if (r.bakiye != null && onceki != null && onceki + r.tutar !== r.bakiye) hata++;
+    onceki = r.bakiye ?? (onceki != null ? onceki + r.tutar : null);
+  }
+  return hata;
+}
+
+/** Aynı gün içindeki satırları, bakiye zinciri tutacak şekilde yeniden sıralar (bazı bankalar gün içini farklı dizer). */
+function gunIciSirala(h, acilis) {
+  let onceki = acilis ?? (h.length && h[0].bakiye != null ? h[0].bakiye - h[0].tutar : null);
+  for (let i = 0; i < h.length; i++) {
+    if (onceki != null && h[i].bakiye != null && onceki + h[i].tutar !== h[i].bakiye) {
+      for (let j = i + 1; j < h.length && h[j].tarih.sira === h[i].tarih.sira; j++) {
+        if (h[j].bakiye != null && onceki + h[j].tutar === h[j].bakiye) {
+          const [x] = h.splice(j, 1);
+          h.splice(i, 0, x);
+          break;
+        }
+      }
+    }
+    onceki = h[i].bakiye ?? (onceki != null ? onceki + h[i].tutar : null);
+  }
+}
+
+/** Tutarlar işaretsiz yazılmışsa (hiç eksi yok) giriş/çıkışı bakiye farkından çıkarır. Yalnızca genel okuyucuda kullanılır. */
+function isaretCikar(h, acilis) {
+  if (!h.length || h.some((r) => r.tutar < 0) || !h.some((r) => r.bakiye != null)) return;
+  let onceki = acilis;
+  for (const r of h) {
+    if (r.bakiye != null && onceki != null && onceki + r.tutar !== r.bakiye && onceki - r.tutar === r.bakiye) {
+      r.tutar = -r.tutar;
+    }
+    onceki = r.bakiye ?? (onceki != null ? onceki + r.tutar : null);
+  }
+}
+
+function duzenleVeDogrula(hamKayitlar, ozeller, secenek = {}) {
+  let acilis = null;
+  let kapanis = null;
+  let sifir = 0;
+  const okunamayan = [];
+  let h = [];
+  for (const r of hamKayitlar) {
+    if (r.tur === 'acilis') { if (acilis == null) acilis = r.bakiye ?? r.tutar; continue; }
+    if (r.tur === 'kapanis') { kapanis = r.bakiye ?? r.tutar; continue; }
+    if (r.tur === 'atla') continue;
+    if (!r.tarih || r.tutar == null) { okunamayan.push(r); continue; }
+    if (r.tutar === 0) { sifir++; continue; }
+    h.push(r);
+  }
+  for (const o of ozeller) {
+    if (o.tur === 'acilis' && acilis == null) acilis = o.deger;
+    if (o.tur === 'kapanis') kapanis = o.deger;
+  }
+  // Ekstre yeniden eskiye diziliyse ters çevir.
+  if (h.length >= 2) {
+    const ilk = h[0].tarih.sira;
+    const son = h[h.length - 1].tarih.sira;
+    if (ilk > son || (ilk === son && zincir([...h].reverse(), acilis) < zincir(h, acilis))) h.reverse();
+  }
+  if (secenek.isaretCikar) isaretCikar(h, acilis);
+  gunIciSirala(h, acilis);
+  const turetilmisAcilis = h.length && h[0].bakiye != null ? h[0].bakiye - h[0].tutar : null;
+  let onceki = acilis ?? turetilmisAcilis;
+  let hataliSatir = 0;
+  let icVirmanSayisi = 0;
+  h = h.map((r) => {
+    // Bakiyeyi değiştirmeyen satır: hesabın kendi içindeki virman (ör. İş Bankası ek hesap/KMH borcu tahsilatı).
+    const icVirman = r.bakiye != null && onceki != null && r.bakiye === onceki;
+    const hata = !icVirman && r.bakiye != null && onceki != null && onceki + r.tutar !== r.bakiye;
+    if (hata) hataliSatir++;
+    if (icVirman) icVirmanSayisi++;
+    onceki = r.bakiye ?? (onceki != null ? onceki + r.tutar : null);
+    return { ...r, hata, icVirman };
+  });
+  const bakiyeVar = h.some((r) => r.bakiye != null);
+  const bakiyesiz = h.filter((r) => r.bakiye == null).length;
+  const sonBakiye = h.length ? onceki : acilis;
+  const sayilan = h.filter((r) => !r.icVirman);
+  return {
+    hareketler: h,
+    ozet: {
+      satir: h.length,
+      icVirman: icVirmanSayisi,
+      giris: sayilan.reduce((t, r) => t + (r.tutar > 0 ? r.tutar : 0), 0),
+      cikis: sayilan.reduce((t, r) => t + (r.tutar < 0 ? r.tutar : 0), 0),
+      acilis: acilis ?? turetilmisAcilis,
+      acilisEkstrede: acilis != null,
+      sonBakiye,
+      kapanis,
+      kapanisUyumlu: kapanis == null || kapanis === sonBakiye,
+      bakiyeVar,
+      bakiyesiz,
+      hataliSatir,
+      sifirAtlanan: sifir,
+      okunamayan: okunamayan.length,
+      ilkTarih: h.length ? tarihYaz(h[0].tarih) : null,
+      sonTarih: h.length ? tarihYaz(h[h.length - 1].tarih) : null,
+    },
+  };
+}
+
+// ---------------------------------------------------------------- dışa açık giriş noktası
+
+function cozumle(tumSatirlar, banka) {
+  const { kayitlar, ozeller } = kayitlariCikar(tumSatirlar, banka);
+  const ham = kayitlar.map((k) => {
+    const a = alanlaraDagit([{ satir: k.capa }, ...k.ekler], k.kol);
+    if (banka.duzelt) for (const key of Object.keys(a)) a[key] = banka.duzelt(a[key]);
+    const r = (banka.kayit || varsayilanKayit)(a);
+    r.tarih = tarihOku(a.tarih);
+    r.aciklama = sade(r.aciklama);
+    r.evrak = sade(r.evrak);
+    if (!r.tur) r.tur = genelTur(r.aciklama);
+    return r;
+  });
+  return duzenleVeDogrula(ham, ozeller, { isaretCikar: !!banka.genel });
+}
+
+function karsilastir(a, b) {
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] > b[i] ? 1 : -1;
+  return 0;
+}
+
+/**
+ * Sayfa metinlerinden ekstreyi çözer.
+ * Dönüş: { banka, iban, hareketler: [{tarih, aciklama, tutar, evrak, bakiye, hata}], ozet } ya da { hata }.
+ */
+function ekstreCoz(sayfalar, secenek = {}) {
+  const ogeSayisi = sayfalar.reduce((t, s) => t + s.ogeler.length, 0);
+  if (!ogeSayisi) {
+    return { hata: 'Bu PDF’te okunabilir metin yok. Taranmış (resim) bir belge olabilir; bankanın internet şubesinden indirilen PDF’i deneyin.' };
+  }
+  const tumSatirlar = sayfalar.map((s) => satirlaraAyir(s.ogeler, s.no));
+  const metin = katla(tumSatirlar.flat().map((s) => s.metin).join('\n'));
+  const adaylar = [];
+  const denenecek = secenek.yalnizGenel ? [GENEL_BANKA] : [...BANKALAR, GENEL_BANKA];
+  for (const banka of denenecek) {
+    let baslik = null;
+    for (const st of tumSatirlar.slice(0, 3)) {
+      baslik = sayfadaBaslikBul(st, banka);
+      if (baslik) break;
+    }
+    if (!baslik) continue;
+    adaylar.push({ banka, imza: (banka.imzalar || []).some((r) => r.test(metin)), puan: baslik.puan });
+  }
+  if (!adaylar.length) {
+    return { hata: 'Hareket tablosunun başlığı bulunamadı. Bu ekstre biçimi henüz tanınmıyor.' };
+  }
+  let enIyi = null;
+  for (const a of adaylar) {
+    const sonuc = cozumle(tumSatirlar, a.banka);
+    const n = sonuc.hareketler.length;
+    const oran = n ? sonuc.ozet.hataliSatir / n : 1;
+    const kademe = oran === 0 ? 3 : oran <= 0.05 ? 2 : oran <= 0.2 ? 1 : 0;
+    const anahtar = [n > 0 ? 1 : 0, kademe, a.imza ? 1 : 0, a.banka.genel ? 0 : 1, a.puan, n];
+    if (!enIyi || karsilastir(anahtar, enIyi.anahtar) > 0) enIyi = { sonuc, anahtar, aday: a };
+  }
+  const { sonuc, aday } = enIyi;
+  if (!sonuc.hareketler.length) {
+    return { hata: 'Ekstrede hareket satırı bulunamadı.' };
+  }
+  const iban = (metin.match(/TR\s?\d{2}[\d\s*]{18,34}/) || [''])[0].replace(/\s+/g, '').slice(0, 26);
+  return {
+    banka: { kod: aday.banka.kod, ad: aday.banka.ad, genel: !!aday.banka.genel, imza: aday.imza },
+    iban,
+    hareketler: sonuc.hareketler,
+    ozet: sonuc.ozet,
+  };
+}
+
+// Test ve hata ayıklama için iç işlevler.
+const _ic = { satirlaraAyir, sayfadaBaslikBul, sinirHesapla, capaMi, alanlaraDagit };
+
+// ---------- xlsx.js
+// Küçük XLSX yazıcı: tek çalışma sayfası; tarih, metin ve tutar hücreleri.
+// Dış kütüphane kullanmaz; dosya sıkıştırmasız ZIP (STORE) olarak paketlenir, Excel ve muhasebe programları bunu sorunsuz açar.
+
+const kodla = (s) => new TextEncoder().encode(s);
+
+let crcTablo = null;
+function crc32(b) {
+  if (!crcTablo) {
+    crcTablo = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) {
+      let c = n;
+      for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+      crcTablo[n] = c >>> 0;
+    }
+  }
+  let c = 0xffffffff;
+  for (let i = 0; i < b.length; i++) c = crcTablo[(c ^ b[i]) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+
+/** Dosyaları sıkıştırmasız ZIP olarak paketler. dosyalar: [{ ad, veri: Uint8Array }] */
+function zipPaketle(dosyalar) {
+  const parcalar = [];
+  const merkez = [];
+  let ofset = 0;
+  for (const d of dosyalar) {
+    const ad = kodla(d.ad);
+    const crc = crc32(d.veri);
+    const n = d.veri.length;
+    const yerel = new DataView(new ArrayBuffer(30));
+    yerel.setUint32(0, 0x04034b50, true);
+    yerel.setUint16(4, 20, true);
+    yerel.setUint16(6, 0x0800, true); // UTF-8 dosya adı
+    yerel.setUint16(8, 0, true); // STORE
+    yerel.setUint16(10, 0, true);
+    yerel.setUint16(12, 0x21, true); // 01.01.1980
+    yerel.setUint32(14, crc, true);
+    yerel.setUint32(18, n, true);
+    yerel.setUint32(22, n, true);
+    yerel.setUint16(26, ad.length, true);
+    yerel.setUint16(28, 0, true);
+    parcalar.push(new Uint8Array(yerel.buffer), ad, d.veri);
+    const m = new DataView(new ArrayBuffer(46));
+    m.setUint32(0, 0x02014b50, true);
+    m.setUint16(4, 20, true);
+    m.setUint16(6, 20, true);
+    m.setUint16(8, 0x0800, true);
+    m.setUint16(10, 0, true);
+    m.setUint16(12, 0, true);
+    m.setUint16(14, 0x21, true);
+    m.setUint32(16, crc, true);
+    m.setUint32(20, n, true);
+    m.setUint32(24, n, true);
+    m.setUint16(28, ad.length, true);
+    m.setUint32(42, ofset, true);
+    merkez.push(new Uint8Array(m.buffer), ad);
+    ofset += 30 + ad.length + n;
+  }
+  const merkezBoy = merkez.reduce((t, p) => t + p.length, 0);
+  const son = new DataView(new ArrayBuffer(22));
+  son.setUint32(0, 0x06054b50, true);
+  son.setUint16(8, dosyalar.length, true);
+  son.setUint16(10, dosyalar.length, true);
+  son.setUint32(12, merkezBoy, true);
+  son.setUint32(16, ofset, true);
+  const hepsi = [...parcalar, ...merkez, new Uint8Array(son.buffer)];
+  const cikti = new Uint8Array(hepsi.reduce((t, p) => t + p.length, 0));
+  let k = 0;
+  for (const p of hepsi) { cikti.set(p, k); k += p.length; }
+  return cikti;
+}
+
+function xml(s) {
+  return String(s ?? '')
+    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function sutunHarfi(i) {
+  let s = '';
+  for (let n = i + 1; n > 0; n = Math.floor((n - 1) / 26)) s = String.fromCharCode(65 + ((n - 1) % 26)) + s;
+  return s;
+}
+
+/** Tarihi Excel seri numarasına çevirir (1900 tarih sistemi). */
+function excelTarih(t) {
+  return Date.UTC(t.y, t.a - 1, t.g) / 86400000 + 25569;
+}
+
+/** Kuruşu kayan nokta hatası olmadan ondalık metne çevirir: -65075 → "-650.75". */
+function kurusMetin(k) {
+  const mutlak = Math.abs(k);
+  return `${k < 0 ? '-' : ''}${Math.floor(mutlak / 100)}.${String(mutlak % 100).padStart(2, '0')}`;
+}
+
+const STIL = { genel: 0, tarih: 1, tutar: 2, baslik: 3, metin: 4 };
+
+/**
+ * Tek sayfalık XLSX üretir.
+ * sutunlar: [{ baslik, tur: 'tarih' | 'tutar' | 'metin', genislik }]
+ * satirlar: her satır, sütun sırasıyla değerler (tarih: {g,a,y}, tutar: kuruş, metin: string)
+ */
+function xlsxOlustur({ sayfaAdi = 'Sayfa1', sutunlar, satirlar }) {
+  const hucre = (r, c, deger, tur) => {
+    const ref = `${sutunHarfi(c)}${r}`;
+    if (deger == null || deger === '') return '';
+    if (tur === 'tarih') return `<c r="${ref}" s="${STIL.tarih}"><v>${excelTarih(deger)}</v></c>`;
+    if (tur === 'tutar') return `<c r="${ref}" s="${STIL.tutar}"><v>${kurusMetin(deger)}</v></c>`;
+    const stil = tur === 'baslik' ? STIL.baslik : STIL.metin;
+    return `<c r="${ref}" t="inlineStr" s="${stil}"><is><t xml:space="preserve">${xml(deger)}</t></is></c>`;
+  };
+  const satirXml = [];
+  satirXml.push(`<row r="1">${sutunlar.map((s, c) => hucre(1, c, s.baslik, 'baslik')).join('')}</row>`);
+  satirlar.forEach((satir, i) => {
+    const r = i + 2;
+    satirXml.push(`<row r="${r}">${sutunlar.map((s, c) => hucre(r, c, satir[c], s.tur)).join('')}</row>`);
+  });
+  const sonRef = `${sutunHarfi(sutunlar.length - 1)}${satirlar.length + 1}`;
+  const sayfa = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+<dimension ref="A1:${sonRef}"/>
+<sheetViews><sheetView workbookViewId="0" tabSelected="1"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>
+<sheetFormatPr defaultRowHeight="15"/>
+<cols>${sutunlar.map((s, c) => `<col min="${c + 1}" max="${c + 1}" width="${s.genislik || 14}" customWidth="1"/>`).join('')}</cols>
+<sheetData>${satirXml.join('')}</sheetData>
+</worksheet>`;
+  const stiller = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<numFmts count="1"><numFmt numFmtId="164" formatCode="dd\\.mm\\.yyyy"/></numFmts>
+<fonts count="2"><font><sz val="11"/><name val="Calibri"/><family val="2"/></font><font><b/><sz val="11"/><name val="Calibri"/><family val="2"/></font></fonts>
+<fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills>
+<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>
+<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+<cellXfs count="5">
+<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
+<xf numFmtId="4" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
+<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/>
+<xf numFmtId="49" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
+</cellXfs>
+<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
+</styleSheet>`;
+  const kitap = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+<sheets><sheet name="${xml(sayfaAdi).slice(0, 31)}" sheetId="1" r:id="rId1"/></sheets>
+</workbook>`;
+  const kitapIliski = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+</Relationships>`;
+  const kokIliski = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+</Relationships>`;
+  const turler = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+<Default Extension="xml" ContentType="application/xml"/>
+<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
+</Types>`;
+  return zipPaketle([
+    { ad: '[Content_Types].xml', veri: kodla(turler) },
+    { ad: '_rels/.rels', veri: kodla(kokIliski) },
+    { ad: 'xl/workbook.xml', veri: kodla(kitap) },
+    { ad: 'xl/_rels/workbook.xml.rels', veri: kodla(kitapIliski) },
+    { ad: 'xl/styles.xml', veri: kodla(stiller) },
+    { ad: 'xl/worksheets/sheet1.xml', veri: kodla(sayfa) },
+  ]);
+}
+
+// ---------- cikti.js
+// Zirve Nova aktarımı için Excel çıktısı: Tarih | Açıklama | Tutar | Evrak No
+// Tutar tek sütunda: hesaba giren para artı, çıkan para eksi.
+
+
+const AKTARIM_SUTUNLARI = [
+  { baslik: 'Tarih', tur: 'tarih', genislik: 12 },
+  { baslik: 'Açıklama', tur: 'metin', genislik: 80 },
+  { baslik: 'Tutar', tur: 'tutar', genislik: 16 },
+  { baslik: 'Evrak No', tur: 'metin', genislik: 26 },
+];
+
+/**
+ * Excel'e yazılacak satırlar.
+ * icVirmanDahil: bakiyeyi değiştirmeyen iç virmanlar (ör. KMH borcu tahsilatı) da yazılsın mı
+ * siraNo: evrak numarası olmayan satırlara sıra numarası verilsin mi
+ */
+function aktarilacakSatirlar(sonuc, { icVirmanDahil = false, siraNo = false } = {}) {
+  return sonuc.hareketler
+    .filter((r) => icVirmanDahil || !r.icVirman)
+    .map((r, i) => ({ ...r, kaynak: r, evrak: r.evrak || (siraNo ? String(i + 1) : '') }));
+}
+
+function excelOlustur(sonuc, secenek = {}) {
+  const satirlar = aktarilacakSatirlar(sonuc, secenek).map((r) => [r.tarih, r.aciklama, r.tutar, r.evrak]);
+  return xlsxOlustur({ sayfaAdi: 'Hareketler', sutunlar: AKTARIM_SUTUNLARI, satirlar });
+}
+
+function excelAdi(pdfAdi) {
+  return `${String(pdfAdi).replace(/\.pdf$/i, '').trim() || 'ekstre'}.xlsx`;
+}
+
+// ---------- uygulama.js
+// Sayfa davranışı: dosya bırakma, PDF okuma, sonuç kartları, önizleme ve Excel indirme.
+// pdf.js'i yükleyen `globalThis.pdfjsYukle` derleme sırasında sayfaya eklenir (tek dosya ya da klasör sürümü).
+
+
+
+
+
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+
+let pdfjsSozu = null;
+const pdfjs = () => (pdfjsSozu ||= globalThis.pdfjsYukle());
+
+const durum = {
+  kayitlar: [],
+  secenek: { siraNo: false, icVirmanDahil: false },
+};
+let sayac = 0;
+
+// ---------------------------------------------------------------- örnek (ilk açılışta görünen)
+
+function ornekSonuc() {
+  const t = (g, a) => ({ g, a, y: 2026, sira: 2026 * 10000 + a * 100 + g });
+  const hareketler = [
+    { tarih: t(2, 9), aciklama: 'GELEN FAST - ÖRNEK TİCARET LTD. ŞTİ. - Ağustos faturası', tutar: 1250000, evrak: '2026090200123', bakiye: 1384050 },
+    { tarih: t(3, 9), aciklama: 'GİDEN HAVALE - ÖRNEK NAKLİYAT - Eylül kirası', tutar: -450000, evrak: '2026090300456', bakiye: 934050 },
+    { tarih: t(3, 9), aciklama: 'HAVALE ÜCRETİ', tutar: -422, evrak: '2026090300456', bakiye: 933628 },
+    { tarih: t(3, 9), aciklama: 'BSMV HAVALE ÜCRETİ', tutar: -21, evrak: '2026090300456', bakiye: 933607 },
+    { tarih: t(5, 9), aciklama: 'POS NET SATIŞ TUTARI', tutar: 286540, evrak: '2026090500789', bakiye: 1220147 },
+  ].map((r) => ({ ...r, hata: false, icVirman: false }));
+  return {
+    banka: { ad: 'Örnek Banka', genel: false, imza: true },
+    iban: '',
+    hareketler,
+    ozet: {
+      satir: 5, icVirman: 0, giris: 1536540, cikis: -450443, acilis: 134050, acilisEkstrede: false,
+      sonBakiye: 1220147, kapanis: null, kapanisUyumlu: true, bakiyeVar: true, bakiyesiz: 0,
+      hataliSatir: 0, sifirAtlanan: 0, okunamayan: 0, ilkTarih: '02.09.2026', sonTarih: '05.09.2026',
+    },
+  };
+}
+const ORNEK = { id: 0, ad: 'ornek-ekstre.pdf', durum: 'hazir', sonuc: ornekSonuc(), acik: true, ornek: true };
+
+// ---------------------------------------------------------------- dosyalar
+
+async function dosyalariEkle(liste) {
+  const dosyalar = [...liste];
+  if (!dosyalar.length) return;
+  const yeni = [];
+  for (const f of dosyalar) {
+    const k = { id: ++sayac, ad: f.name, durum: 'okunuyor', acik: false };
+    if (!/\.pdf$/i.test(f.name) && f.type !== 'application/pdf') {
+      k.durum = 'hata';
+      k.hata = 'Bu dosya PDF değil. Bankanın internet şubesinden indirdiğiniz PDF ekstreyi bırakın.';
+    } else {
+      k.dosya = f;
+    }
+    durum.kayitlar.push(k);
+    yeni.push(k);
+  }
+  ciz();
+  for (const k of yeni) {
+    if (k.durum !== 'okunuyor') continue;
+    try {
+      k.veri = new Uint8Array(await k.dosya.arrayBuffer());
+    } catch {
+      k.durum = 'hata';
+      k.hata = 'Dosya okunamadı.';
+      ciz();
+      continue;
+    }
+    delete k.dosya;
+    await coz(k);
+  }
+}
+
+async function coz(k, sifre) {
+  k.durum = 'okunuyor';
+  ciz();
+  let gorev = null;
+  try {
+    const lib = await pdfjs();
+    gorev = lib.getDocument({ data: k.veri.slice(), password: sifre, isEvalSupported: false, verbosity: 0 });
+    const pdf = await gorev.promise;
+    const sayfalar = await sayfalariOku(pdf);
+    const sonuc = ekstreCoz(sayfalar);
+    if (sonuc.hata) {
+      k.durum = 'hata';
+      k.hata = sonuc.hata;
+    } else {
+      k.durum = 'hazir';
+      k.sonuc = sonuc;
+      k.acik = sonuc.ozet.hataliSatir > 0;
+    }
+  } catch (e) {
+    if (e && e.name === 'PasswordException') {
+      k.durum = 'sifre';
+      k.sifreHatali = Boolean(sifre);
+    } else if (e && e.name === 'InvalidPDFException') {
+      k.durum = 'hata';
+      k.hata = 'Dosya geçerli bir PDF değil ya da bozuk.';
+    } else {
+      k.durum = 'hata';
+      k.hata = `PDF açılamadı: ${e?.message || e}`;
+    }
+  } finally {
+    try { await gorev?.destroy(); } catch { /* yok say */ }
+  }
+  ciz();
+}
+
+// ---------------------------------------------------------------- indirme
+
+let indirmeKatmani = null;
+const cerceveIcinde = typeof window.claude?.use === 'function';
+if (cerceveIcinde) window.claude.use('downloads').then((d) => { indirmeKatmani = d; }, () => {});
+
+async function dosyaKaydet(ad, veri) {
+  if (cerceveIcinde) {
+    const d = indirmeKatmani || (await window.claude.use('downloads').catch(() => null));
+    if (d) {
+      try {
+        await d.save({ filename: ad, data: veri });
+        bildir(`${ad} kaydedildi.`);
+      } catch (e) {
+        if (e?.code === 'declined') return;
+        if (e?.code === 'rate_limited') bildir('Önceki kaydetme penceresi hâlâ açık; onu yanıtlayın.');
+        else bildir(`Dosya kaydedilemedi (${e?.code || e?.message || 'bilinmeyen hata'}).`);
+      }
+      return;
+    }
+  }
+  const tur = ad.endsWith('.zip') ? 'application/zip' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  const url = URL.createObjectURL(new Blob([veri], { type: tur }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = ad;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
+function excelIndir(k) {
+  return dosyaKaydet(excelAdi(k.ad), excelOlustur(k.sonuc, durum.secenek));
+}
+
+function tumunuIndir() {
+  const hazir = durum.kayitlar.filter((k) => k.durum === 'hazir');
+  const adlar = new Set();
+  const dosyalar = hazir.map((k) => {
+    let ad = excelAdi(k.ad);
+    for (let i = 2; adlar.has(ad); i++) ad = excelAdi(k.ad).replace(/\.xlsx$/, ` (${i}).xlsx`);
+    adlar.add(ad);
+    return { ad, veri: excelOlustur(k.sonuc, durum.secenek) };
+  });
+  return dosyaKaydet('ekstreler-excel.zip', zipPaketle(dosyalar));
+}
+
+let bildirimZamani = null;
+function bildir(metin) {
+  const el = $('#bildirim');
+  el.textContent = metin;
+  el.hidden = false;
+  clearTimeout(bildirimZamani);
+  bildirimZamani = setTimeout(() => { el.hidden = true; }, 4500);
+}
+
+// ---------------------------------------------------------------- çizim
+
+const ibanYaz = (iban) => (iban ? iban.replace(/(.{4})/g, '$1 ').trim() : '');
+
+function durumCipi(k) {
+  if (k.durum === 'okunuyor') return '<span class="cip cip-bilgi">Okunuyor…</span>';
+  if (k.durum === 'sifre') return '<span class="cip cip-uyari">Şifreli</span>';
+  if (k.durum === 'hata') return '<span class="cip cip-kotu">Okunamadı</span>';
+  const o = k.sonuc.ozet;
+  if (!o.bakiyeVar) return '<span class="cip cip-uyari">Bakiye kontrolü yapılamadı</span>';
+  if (o.hataliSatir > 0) return `<span class="cip cip-kotu">${o.hataliSatir} satır bakiyeyi tutmuyor</span>`;
+  if (!o.kapanisUyumlu) return '<span class="cip cip-kotu">Kapanış bakiyesi farklı</span>';
+  if (o.bakiyesiz > 0) return `<span class="cip cip-uyari">${o.bakiyesiz} satırda bakiye yok</span>`;
+  return '<span class="cip cip-iyi"><svg aria-hidden="true" viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" /></svg>Bakiye tutarlı</span>';
+}
+
+function notlar(k) {
+  const { sonuc } = k;
+  const o = sonuc.ozet;
+  const n = [];
+  if (k.ornek) n.push('Bu bir örnek. Kendi ekstrenizi bıraktığınızda kaldırılır.');
+  if (sonuc.banka.genel) n.push('Banka biçimi tanınmadı, genel okuyucu kullanıldı. Bakiye kontrolü tutarlıysa tarih ve tutarlar doğrudur; açıklamaları gözden geçirin.');
+  else if (!sonuc.banka.imza && !k.ornek) n.push(`Ekstrede banka adı geçmiyor; sayfa düzeni ${sonuc.banka.ad} biçimine uyuyor.`);
+  if (o.hataliSatir > 0) n.push(`${o.hataliSatir} satırda “önceki bakiye + tutar” satırdaki bakiyeyi tutmuyor. Bu satırlar tabloda işaretli; aktarmadan önce PDF ile karşılaştırın.`);
+  if (!o.kapanisUyumlu) n.push(`Ekstredeki kapanış bakiyesi (${tutarYaz(o.kapanis)}) son satırın bakiyesinden (${tutarYaz(o.sonBakiye)}) farklı.`);
+  if (o.bakiyeVar && o.bakiyesiz > 0) n.push(`${o.bakiyesiz} satırda bakiye okunamadı; bu satırlar kontrol edilemedi.`);
+  if (!o.bakiyeVar) n.push('Bakiye sütunu okunamadığı için satırlar bakiyeyle doğrulanamadı. Toplamları ekstreyle karşılaştırın.');
+  if (o.icVirman > 0) {
+    n.push(durum.secenek.icVirmanDahil
+      ? `${o.icVirman} satır bakiyeyi değiştirmiyor (ek hesap / KMH iç virmanı); seçiminiz gereği Excel'e eklendi.`
+      : `${o.icVirman} satır bakiyeyi değiştirmiyor (ek hesap / KMH iç virmanı); Excel'e alınmadı. Eklemek için yukarıdaki seçeneği işaretleyin.`);
+  }
+  if (o.sifirAtlanan > 0) n.push(`${o.sifirAtlanan} sıfır tutarlı satır (ör. yetersiz bakiye denemesi) Excel'e alınmadı.`);
+  if (o.okunamayan > 0) n.push(`${o.okunamayan} satırın tarihi ya da tutarı okunamadı ve Excel'e alınmadı.`);
+  if (!k.ornek && sonuc.hareketler.every((r) => !r.evrak)) {
+    n.push(durum.secenek.siraNo
+      ? 'Bu ekstrede evrak numarası yok; Evrak No sütununa sıra numarası yazılıyor.'
+      : 'Bu ekstrede evrak numarası yok; Evrak No sütunu boş kalacak.');
+  }
+  return n;
+}
+
+function mutabakat(o) {
+  const kalem = (isaret, etiket, deger, sinif = '') =>
+    `<div class="kalem ${sinif}"><i aria-hidden="true">${isaret}</i><span>${etiket}</span><b>${tutarYaz(deger)}</b></div>`;
+  return `<div class="mutabakat" aria-label="Bakiye mutabakatı">
+    ${kalem('', 'Açılış bakiyesi', o.acilis)}
+    ${kalem('+', 'Giren', o.giris)}
+    ${kalem('−', 'Çıkan', Math.abs(o.cikis))}
+    ${kalem('=', 'Son bakiye', o.sonBakiye, 'son')}
+  </div>`;
+}
+
+function onizleme(k) {
+  const aktarim = aktarilacakSatirlar(k.sonuc, durum.secenek);
+  const evrakHaritasi = new Map(aktarim.map((r) => [r.kaynak, r.evrak]));
+  const satirlar = k.sonuc.hareketler.map((r) => {
+    const aktariliyor = evrakHaritasi.has(r);
+    const sinif = [r.hata ? 'hata' : '', aktariliyor ? '' : 'disarida'].filter(Boolean).join(' ');
+    const etiket = r.hata
+      ? '<span class="satir-etiket kotu">bakiye tutmuyor</span>'
+      : !aktariliyor ? '<span class="satir-etiket">iç virman · Excel’e alınmıyor</span>' : '';
+    return `<tr class="${sinif}">
+      <td class="sayi">${tarihYaz(r.tarih)}</td>
+      <td class="aciklama">${esc(r.aciklama)}${etiket}</td>
+      <td class="sayi tutar ${r.tutar < 0 ? 'eksi' : ''}">${tutarYaz(r.tutar)}</td>
+      <td class="sayi evrak">${esc(aktariliyor ? evrakHaritasi.get(r) : r.evrak)}</td>
+      <td class="sayi bakiye">${r.bakiye == null ? '' : tutarYaz(r.bakiye)}</td>
+    </tr>`;
+  }).join('');
+  return `<div class="onizleme" id="onizleme-${k.id}">
+    <table>
+      <thead><tr><th>Tarih</th><th>Açıklama</th><th class="sag">Tutar</th><th>Evrak No</th><th class="sag" title="Ekstredeki bakiye; Excel'e yazılmaz">Bakiye <small>(kontrol)</small></th></tr></thead>
+      <tbody>${satirlar}</tbody>
+    </table>
+  </div>`;
+}
+
+function kart(k) {
+  const baslik = k.durum === 'hazir' ? esc(k.sonuc.banka.ad) : 'Ekstre';
+  let govde = '';
+  if (k.durum === 'okunuyor') {
+    govde = '<p class="fis-mesaj">Sayfalar okunuyor ve satırlar ayrıştırılıyor.</p>';
+  } else if (k.durum === 'hata') {
+    govde = `<p class="fis-mesaj kotu">${esc(k.hata)}</p>`;
+  } else if (k.durum === 'sifre') {
+    govde = `<form class="sifre" data-id="${k.id}">
+      <label for="sifre-${k.id}">${k.sifreHatali ? 'Şifre yanlış. Tekrar deneyin:' : 'Bu PDF şifreli. Bankanın bildirdiği şifreyi girin (çoğunlukla TC kimlik / vergi no ya da doğum tarihi):'}</label>
+      <div class="sifre-satir"><input type="password" id="sifre-${k.id}" autocomplete="off" required><button class="birincil" type="submit">Aç</button></div>
+    </form>`;
+  } else {
+    const { sonuc } = k;
+    const o = sonuc.ozet;
+    const aktarim = aktarilacakSatirlar(sonuc, durum.secenek);
+    const bilgi = [
+      sonuc.iban ? `<div><dt>IBAN</dt><dd class="sayi">${ibanYaz(sonuc.iban)}</dd></div>` : '',
+      `<div><dt>Dönem</dt><dd class="sayi">${o.ilkTarih} – ${o.sonTarih}</dd></div>`,
+      `<div><dt>Excel'e yazılacak</dt><dd class="sayi">${aktarim.length} satır</dd></div>`,
+    ].join('');
+    const notListe = notlar(k).map((t) => `<li>${esc(t)}</li>`).join('');
+    govde = `<dl class="fis-bilgi">${bilgi}</dl>
+      ${mutabakat(o)}
+      ${notListe ? `<ul class="notlar">${notListe}</ul>` : ''}
+      <div class="fis-eylem">
+        ${k.ornek ? '' : `<button class="birincil" type="button" data-eylem="indir" data-id="${k.id}">Excel indir</button>`}
+        <button class="ikincil" type="button" data-eylem="ac" data-id="${k.id}" aria-expanded="${k.acik}" aria-controls="onizleme-${k.id}">${k.acik ? 'Satırları gizle' : 'Satırları göster'}</button>
+        ${k.ornek ? '' : `<span class="cikti-adi">${esc(excelAdi(k.ad))}</span>`}
+      </div>
+      ${k.acik ? onizleme(k) : ''}`;
+  }
+  return `<article class="fis${k.ornek ? ' fis-ornek' : ''}" data-id="${k.id}">
+    <header class="fis-ust">
+      <div class="fis-kimlik">
+        <h2>${baslik}${k.ornek ? ' <span class="cip cip-ornek">Örnek</span>' : ''}</h2>
+        <p class="dosya">${esc(k.ad)}</p>
+      </div>
+      ${durumCipi(k)}
+    </header>
+    ${govde}
+  </article>`;
+}
+
+function ciz() {
+  const liste = durum.kayitlar.length ? durum.kayitlar : [ORNEK];
+  $('#liste').innerHTML = liste.map(kart).join('');
+  const hazir = durum.kayitlar.filter((k) => k.durum === 'hazir');
+  const cubuk = $('#aracCubugu');
+  cubuk.hidden = durum.kayitlar.length === 0;
+  if (!cubuk.hidden) {
+    const tutarli = hazir.filter((k) => k.sonuc.ozet.bakiyeVar && k.sonuc.ozet.hataliSatir === 0 && k.sonuc.ozet.kapanisUyumlu && k.sonuc.ozet.bakiyesiz === 0).length;
+    const okunuyor = durum.kayitlar.filter((k) => k.durum === 'okunuyor').length;
+    const parcalar = [`${durum.kayitlar.length} dosya`];
+    if (hazir.length) parcalar.push(`${tutarli}/${hazir.length} bakiye tutarlı`);
+    if (okunuyor) parcalar.push(`${okunuyor} okunuyor`);
+    $('#ozetMetin').textContent = parcalar.join(' · ');
+    $('#tumunuIndir').hidden = hazir.length < 2;
+  }
+}
+
+// ---------------------------------------------------------------- olaylar
+
+$('#dosyaSec').addEventListener('change', (e) => {
+  dosyalariEkle(e.target.files);
+  e.target.value = '';
+});
+
+const alan = $('#birakAlan');
+let surukleme = 0;
+window.addEventListener('dragenter', (e) => {
+  if (![...(e.dataTransfer?.types || [])].includes('Files')) return;
+  e.preventDefault();
+  surukleme++;
+  alan.classList.add('uzerinde');
+});
+window.addEventListener('dragover', (e) => {
+  if (![...(e.dataTransfer?.types || [])].includes('Files')) return;
+  e.preventDefault();
+});
+window.addEventListener('dragleave', () => {
+  surukleme = Math.max(0, surukleme - 1);
+  if (!surukleme) alan.classList.remove('uzerinde');
+});
+window.addEventListener('drop', (e) => {
+  if (!e.dataTransfer?.files?.length) return;
+  e.preventDefault();
+  surukleme = 0;
+  alan.classList.remove('uzerinde');
+  dosyalariEkle(e.dataTransfer.files);
+});
+
+$('#siraNo').addEventListener('change', (e) => { durum.secenek.siraNo = e.target.checked; ciz(); });
+$('#icVirman').addEventListener('change', (e) => { durum.secenek.icVirmanDahil = e.target.checked; ciz(); });
+
+$('#liste').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-eylem]');
+  if (!b) return;
+  const id = Number(b.dataset.id);
+  const k = id === 0 ? ORNEK : durum.kayitlar.find((x) => x.id === id);
+  if (!k) return;
+  if (b.dataset.eylem === 'ac') {
+    k.acik = !k.acik;
+    ciz();
+    document.querySelector(`button[data-eylem="ac"][data-id="${id}"]`)?.focus();
+  } else if (b.dataset.eylem === 'indir') {
+    excelIndir(k);
+  }
+});
+
+$('#liste').addEventListener('submit', (e) => {
+  const f = e.target.closest('form.sifre');
+  if (!f) return;
+  e.preventDefault();
+  const k = durum.kayitlar.find((x) => x.id === Number(f.dataset.id));
+  const sifre = f.querySelector('input').value;
+  if (k && sifre) coz(k, sifre);
+});
+
+$('#tumunuIndir').addEventListener('click', () => tumunuIndir());
+$('#temizle').addEventListener('click', () => {
+  durum.kayitlar = [];
+  ciz();
+});
+
+ciz();
+</script>
+</body>
+</html>

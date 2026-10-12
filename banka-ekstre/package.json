@@ -1,0 +1,14 @@
+{
+  "name": "ekstre-donusturucu",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Banka PDF ekstrelerini Zirve Nova Excel aktarımına çeviren tarayıcı aracı",
+  "type": "module",
+  "scripts": {
+    "derle": "node araclar/derle.mjs",
+    "test": "node araclar/test.mjs ornekler"
+  },
+  "devDependencies": {
+    "pdfjs-dist": "6.2.108"
+  }
+}
