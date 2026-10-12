@@ -1,5 +1,6 @@
-// Zirve Nova aktarımı için Excel çıktısı: Tarih | Açıklama | Tutar | Evrak No
-// Tutar tek sütunda: hesaba giren para artı, çıkan para eksi.
+// Zirve Nova aktarımı için Excel çıktısı: Tarih | Açıklama | Tutar | Evrak No | Bakiye
+// Tutar tek sütunda: hesaba giren para artı, çıkan para eksi. Bakiye, ekstrede o satırda yazan bakiyedir
+// (ek hesap/KMH kullanılan bankalarda net bakiye). İlk dört sütunun yeri değişmez.
 
 import { xlsxOlustur } from './xlsx.js';
 
@@ -8,6 +9,7 @@ export const AKTARIM_SUTUNLARI = [
   { baslik: 'Açıklama', tur: 'metin', genislik: 80 },
   { baslik: 'Tutar', tur: 'tutar', genislik: 16 },
   { baslik: 'Evrak No', tur: 'metin', genislik: 26 },
+  { baslik: 'Bakiye', tur: 'tutar', genislik: 16 },
 ];
 
 /**
@@ -22,7 +24,7 @@ export function aktarilacakSatirlar(sonuc, { icVirmanDahil = false, siraNo = fal
 }
 
 export function excelOlustur(sonuc, secenek = {}) {
-  const satirlar = aktarilacakSatirlar(sonuc, secenek).map((r) => [r.tarih, r.aciklama, r.tutar, r.evrak]);
+  const satirlar = aktarilacakSatirlar(sonuc, secenek).map((r) => [r.tarih, r.aciklama, r.tutar, r.evrak, r.bakiye]);
   return xlsxOlustur({ sayfaAdi: 'Hareketler', sutunlar: AKTARIM_SUTUNLARI, satirlar });
 }
 

@@ -199,6 +199,8 @@ function notlar(k) {
       ? `${o.icVirman} satır bakiyeyi değiştirmiyor (ek hesap / KMH iç virmanı); seçiminiz gereği Excel'e eklendi.`
       : `${o.icVirman} satır bakiyeyi değiştirmiyor (ek hesap / KMH iç virmanı); Excel'e alınmadı. Eklemek için yukarıdaki seçeneği işaretleyin.`);
   }
+  const ekHesapli = sonuc.hareketler.filter((r) => r.ekHesap).length;
+  if (ekHesapli > 0) n.push(`${ekHesapli} satırda ek hesap (KMH) kullanılmış; Bakiye sütununa ekstredeki “Bakiye” ile “Ek Hesap Bakiyesi”nin toplamı, yani net bakiye yazıldı.`);
   if (o.sifirAtlanan > 0) n.push(`${o.sifirAtlanan} sıfır tutarlı satır (ör. yetersiz bakiye denemesi) Excel'e alınmadı.`);
   if (o.okunamayan > 0) n.push(`${o.okunamayan} satırın tarihi ya da tutarı okunamadı ve Excel'e alınmadı.`);
   if (!k.ornek && sonuc.hareketler.every((r) => !r.evrak)) {
@@ -239,7 +241,7 @@ function onizleme(k) {
   }).join('');
   return `<div class="onizleme" id="onizleme-${k.id}">
     <table>
-      <thead><tr><th>Tarih</th><th>Açıklama</th><th class="sag">Tutar</th><th>Evrak No</th><th class="sag" title="Ekstredeki bakiye; Excel'e yazılmaz">Bakiye <small>(kontrol)</small></th></tr></thead>
+      <thead><tr><th>Tarih</th><th>Açıklama</th><th class="sag">Tutar</th><th>Evrak No</th><th class="sag">Bakiye</th></tr></thead>
       <tbody>${satirlar}</tbody>
     </table>
   </div>`;

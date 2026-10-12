@@ -182,7 +182,6 @@
   td { padding: 7px 12px; border-bottom: 1px solid var(--cizgi); vertical-align: top; }
   td.sayi { white-space: nowrap; }
   td.tutar, td.bakiye { text-align: right; }
-  td.bakiye { color: var(--soluk); }
   td.aciklama { min-width: 300px; overflow-wrap: anywhere; }
   td.eksi { color: var(--eksi); }
   tr.hata td { background: var(--kotu-zemin); }
@@ -219,7 +218,7 @@
     <div>
       <p class="ust-etiket">Muhasebe Araçları</p>
       <h1>Ekstre Dönüştürücü</h1>
-      <p class="ust-aciklama">Banka PDF ekstresini Zirve Nova’ya aktarılacak Excel’e çevirir: <b>Tarih</b>, <b>Açıklama</b>, <b>Tutar</b> (giren artı, çıkan eksi) ve <b>Evrak No</b>.</p>
+      <p class="ust-aciklama">Banka PDF ekstresini Zirve Nova’ya aktarılacak Excel’e çevirir: <b>Tarih</b>, <b>Açıklama</b>, <b>Tutar</b> (giren artı, çıkan eksi), <b>Evrak No</b> ve <b>Bakiye</b>.</p>
     </div>
     <p class="gizlilik"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>Dosyalar bu bilgisayarda işlenir, hiçbir yere yüklenmez.</p>
   </header>
@@ -251,7 +250,7 @@
   <footer class="alt">
     <p><b>Tanınan biçimler:</b> Akbank, Halkbank (iki biçim), İş Bankası, Kuveyt Türk, QNB, TEB, Vakıfbank, Yapı Kredi, Ziraat Bankası. Diğer bankaların ekstreleri genel okuyucuyla denenir.</p>
     <p><b>Bakiye kontrolü:</b> her satırda önceki bakiyeye tutar eklenir ve sonuç ekstredeki bakiyeyle karşılaştırılır. Tutmayan satır işaretlenir; kontrol tutarlıysa tarih, tutar ve işaretler ekstreyle birebir aynıdır.</p>
-    <p><b>Excel biçimi:</b> tek sayfa, ilk satır başlık; tarih gg.aa.yyyy, tutar sayı, evrak no metin.</p>
+    <p><b>Excel biçimi:</b> tek sayfa, ilk satır başlık; sütunlar Tarih (gg.aa.yyyy), Açıklama, Tutar, Evrak No (metin), Bakiye. Tutar ve bakiye sayı olarak yazılır.</p>
   </footer>
 
   <div class="bildirim" id="bildirim" role="status" hidden></div>

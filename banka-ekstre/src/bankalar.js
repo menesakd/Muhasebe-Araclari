@@ -155,9 +155,11 @@ export const BANKALAR = [
     // Ek hesap (KMH) kullanılınca "Bakiye" 0 görünür, eksi kısım "Ek Hesap Bakiyesi"ndedir; gerçek bakiye ikisinin toplamı.
     kayit: (a) => {
       const bakiye = kurusOku(a.bakiye);
+      const ek = kurusOku(a.ekBakiye) || 0;
       return {
         tutar: kurusOku(a.tutar),
-        bakiye: bakiye == null ? null : bakiye + (kurusOku(a.ekBakiye) || 0),
+        bakiye: bakiye == null ? null : bakiye + ek,
+        ekHesap: ek !== 0,
         aciklama: birlestir(a.tip, a.aciklama),
         evrak: '',
       };
@@ -264,8 +266,9 @@ export const GENEL_BANKA = {
     let bakiye = sayiBul(a.bakiye);
     if (bakiye != null && (a.bakiyeIsaret || '').includes('-')) bakiye = -Math.abs(bakiye);
     const ek = sayiBul(a.ekBakiye);
-    if (bakiye != null && ek != null && ek < 0) bakiye += ek;
+    const ekHesap = bakiye != null && ek != null && ek < 0;
+    if (ekHesap) bakiye += ek;
     const ozel = a.ozel && a.ozel !== '-' ? a.ozel : '';
-    return { tutar, bakiye, aciklama: birlestir(birlestir(a.tip, a.aciklama), ozel, ' / '), evrak: a.evrak };
+    return { tutar, bakiye, ekHesap, aciklama: birlestir(birlestir(a.tip, a.aciklama), ozel, ' / '), evrak: a.evrak };
   },
 };

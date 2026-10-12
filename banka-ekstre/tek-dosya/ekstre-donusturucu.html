@@ -188,7 +188,6 @@
   td { padding: 7px 12px; border-bottom: 1px solid var(--cizgi); vertical-align: top; }
   td.sayi { white-space: nowrap; }
   td.tutar, td.bakiye { text-align: right; }
-  td.bakiye { color: var(--soluk); }
   td.aciklama { min-width: 300px; overflow-wrap: anywhere; }
   td.eksi { color: var(--eksi); }
   tr.hata td { background: var(--kotu-zemin); }
@@ -226,7 +225,7 @@
     <div>
       <p class="ust-etiket">Muhasebe Araçları</p>
       <h1>Ekstre Dönüştürücü</h1>
-      <p class="ust-aciklama">Banka PDF ekstresini Zirve Nova’ya aktarılacak Excel’e çevirir: <b>Tarih</b>, <b>Açıklama</b>, <b>Tutar</b> (giren artı, çıkan eksi) ve <b>Evrak No</b>.</p>
+      <p class="ust-aciklama">Banka PDF ekstresini Zirve Nova’ya aktarılacak Excel’e çevirir: <b>Tarih</b>, <b>Açıklama</b>, <b>Tutar</b> (giren artı, çıkan eksi), <b>Evrak No</b> ve <b>Bakiye</b>.</p>
     </div>
     <p class="gizlilik"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>Dosyalar bu bilgisayarda işlenir, hiçbir yere yüklenmez.</p>
   </header>
@@ -258,7 +257,7 @@
   <footer class="alt">
     <p><b>Tanınan biçimler:</b> Akbank, Halkbank (iki biçim), İş Bankası, Kuveyt Türk, QNB, TEB, Vakıfbank, Yapı Kredi, Ziraat Bankası. Diğer bankaların ekstreleri genel okuyucuyla denenir.</p>
     <p><b>Bakiye kontrolü:</b> her satırda önceki bakiyeye tutar eklenir ve sonuç ekstredeki bakiyeyle karşılaştırılır. Tutmayan satır işaretlenir; kontrol tutarlıysa tarih, tutar ve işaretler ekstreyle birebir aynıdır.</p>
-    <p><b>Excel biçimi:</b> tek sayfa, ilk satır başlık; tarih gg.aa.yyyy, tutar sayı, evrak no metin.</p>
+    <p><b>Excel biçimi:</b> tek sayfa, ilk satır başlık; sütunlar Tarih (gg.aa.yyyy), Açıklama, Tutar, Evrak No (metin), Bakiye. Tutar ve bakiye sayı olarak yazılır.</p>
   </footer>
 
   <div class="bildirim" id="bildirim" role="status" hidden></div>
@@ -512,9 +511,11 @@ const BANKALAR = [
     // Ek hesap (KMH) kullanılınca "Bakiye" 0 görünür, eksi kısım "Ek Hesap Bakiyesi"ndedir; gerçek bakiye ikisinin toplamı.
     kayit: (a) => {
       const bakiye = kurusOku(a.bakiye);
+      const ek = kurusOku(a.ekBakiye) || 0;
       return {
         tutar: kurusOku(a.tutar),
-        bakiye: bakiye == null ? null : bakiye + (kurusOku(a.ekBakiye) || 0),
+        bakiye: bakiye == null ? null : bakiye + ek,
+        ekHesap: ek !== 0,
         aciklama: birlestir(a.tip, a.aciklama),
         evrak: '',
       };
@@ -621,9 +622,10 @@ const GENEL_BANKA = {
     let bakiye = sayiBul(a.bakiye);
     if (bakiye != null && (a.bakiyeIsaret || '').includes('-')) bakiye = -Math.abs(bakiye);
     const ek = sayiBul(a.ekBakiye);
-    if (bakiye != null && ek != null && ek < 0) bakiye += ek;
+    const ekHesap = bakiye != null && ek != null && ek < 0;
+    if (ekHesap) bakiye += ek;
     const ozel = a.ozel && a.ozel !== '-' ? a.ozel : '';
-    return { tutar, bakiye, aciklama: birlestir(birlestir(a.tip, a.aciklama), ozel, ' / '), evrak: a.evrak };
+    return { tutar, bakiye, ekHesap, aciklama: birlestir(birlestir(a.tip, a.aciklama), ozel, ' / '), evrak: a.evrak };
   },
 };
 
@@ -1341,8 +1343,9 @@ function xlsxOlustur({ sayfaAdi = 'Sayfa1', sutunlar, satirlar }) {
 }
 
 // ---------- cikti.js
-// Zirve Nova aktarımı için Excel çıktısı: Tarih | Açıklama | Tutar | Evrak No
-// Tutar tek sütunda: hesaba giren para artı, çıkan para eksi.
+// Zirve Nova aktarımı için Excel çıktısı: Tarih | Açıklama | Tutar | Evrak No | Bakiye
+// Tutar tek sütunda: hesaba giren para artı, çıkan para eksi. Bakiye, ekstrede o satırda yazan bakiyedir
+// (ek hesap/KMH kullanılan bankalarda net bakiye). İlk dört sütunun yeri değişmez.
 
 
 const AKTARIM_SUTUNLARI = [
@@ -1350,6 +1353,7 @@ const AKTARIM_SUTUNLARI = [
   { baslik: 'Açıklama', tur: 'metin', genislik: 80 },
   { baslik: 'Tutar', tur: 'tutar', genislik: 16 },
   { baslik: 'Evrak No', tur: 'metin', genislik: 26 },
+  { baslik: 'Bakiye', tur: 'tutar', genislik: 16 },
 ];
 
 /**
@@ -1364,7 +1368,7 @@ function aktarilacakSatirlar(sonuc, { icVirmanDahil = false, siraNo = false } = 
 }
 
 function excelOlustur(sonuc, secenek = {}) {
-  const satirlar = aktarilacakSatirlar(sonuc, secenek).map((r) => [r.tarih, r.aciklama, r.tutar, r.evrak]);
+  const satirlar = aktarilacakSatirlar(sonuc, secenek).map((r) => [r.tarih, r.aciklama, r.tutar, r.evrak, r.bakiye]);
   return xlsxOlustur({ sayfaAdi: 'Hareketler', sutunlar: AKTARIM_SUTUNLARI, satirlar });
 }
 
@@ -1573,6 +1577,8 @@ function notlar(k) {
       ? `${o.icVirman} satır bakiyeyi değiştirmiyor (ek hesap / KMH iç virmanı); seçiminiz gereği Excel'e eklendi.`
       : `${o.icVirman} satır bakiyeyi değiştirmiyor (ek hesap / KMH iç virmanı); Excel'e alınmadı. Eklemek için yukarıdaki seçeneği işaretleyin.`);
   }
+  const ekHesapli = sonuc.hareketler.filter((r) => r.ekHesap).length;
+  if (ekHesapli > 0) n.push(`${ekHesapli} satırda ek hesap (KMH) kullanılmış; Bakiye sütununa ekstredeki “Bakiye” ile “Ek Hesap Bakiyesi”nin toplamı, yani net bakiye yazıldı.`);
   if (o.sifirAtlanan > 0) n.push(`${o.sifirAtlanan} sıfır tutarlı satır (ör. yetersiz bakiye denemesi) Excel'e alınmadı.`);
   if (o.okunamayan > 0) n.push(`${o.okunamayan} satırın tarihi ya da tutarı okunamadı ve Excel'e alınmadı.`);
   if (!k.ornek && sonuc.hareketler.every((r) => !r.evrak)) {
@@ -1613,7 +1619,7 @@ function onizleme(k) {
   }).join('');
   return `<div class="onizleme" id="onizleme-${k.id}">
     <table>
-      <thead><tr><th>Tarih</th><th>Açıklama</th><th class="sag">Tutar</th><th>Evrak No</th><th class="sag" title="Ekstredeki bakiye; Excel'e yazılmaz">Bakiye <small>(kontrol)</small></th></tr></thead>
+      <thead><tr><th>Tarih</th><th>Açıklama</th><th class="sag">Tutar</th><th>Evrak No</th><th class="sag">Bakiye</th></tr></thead>
       <tbody>${satirlar}</tbody>
     </table>
   </div>`;

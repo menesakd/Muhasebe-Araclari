@@ -2,12 +2,12 @@
 
 Banka PDF ekstresini, Zirve Nova’nın Excel aktarımına hazır bir dosyaya çevirir:
 
-| Tarih | Açıklama | Tutar | Evrak No |
-|---|---|---|---|
-| 02.09.2026 | GELEN FAST - … - Ağustos faturası | 12.500,00 | 2026090200123 |
-| 03.09.2026 | GİDEN HAVALE - … - Eylül kirası | -4.500,00 | 2026090300456 |
+| Tarih | Açıklama | Tutar | Evrak No | Bakiye |
+|---|---|---|---|---|
+| 02.09.2026 | GELEN FAST - … - Ağustos faturası | 12.500,00 | 2026090200123 | 13.840,50 |
+| 03.09.2026 | GİDEN HAVALE - … - Eylül kirası | -4.500,00 | 2026090300456 | 9.340,50 |
 
-Hesaba giren para artı, çıkan para eksi yazılır. Tarih gerçek tarih hücresidir (gg.aa.yyyy), tutar sayıdır, evrak no metindir (uzun numaralar bozulmasın diye).
+Hesaba giren para artı, çıkan para eksi yazılır. Tarih gerçek tarih hücresidir (gg.aa.yyyy), tutar ve bakiye sayıdır, evrak no metindir (uzun numaralar bozulmasın diye). Bakiye, ekstrede o satırda yazan bakiyedir; ek hesap (KMH) kullanılan satırlarda net bakiye (Bakiye + Ek Hesap Bakiyesi) yazılır.
 
 ## Kullanım
 
