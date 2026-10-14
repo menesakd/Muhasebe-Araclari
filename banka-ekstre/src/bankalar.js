@@ -201,6 +201,22 @@ export const BANKALAR = [
     altBilgi: [/^TARAFLAR ARASINDA/, /^SAYFA NO/],
   },
   {
+    kod: 'ziraatkatilim',
+    ad: 'Ziraat Katılım',
+    // Ekstrede banka adı geçmeyebilir; IBAN'daki banka kodu 00209 Ziraat Katılım'dır.
+    imzalar: [/ZIRAAT KATILIM/, /TR\s?\d{2}\s?0020\s?9/],
+    basliklar: [b('tarih', 'TARIH'), b('aciklama', 'ACIKLAMA'), b('tutar', 'TUTAR'), b('bakiye', 'BAKIYE')],
+    zorunlu: ['tarih', 'aciklama', 'tutar', 'bakiye'],
+    anaHucre: 4,
+    tarihDeseni: /^\d{2}\.\d{2}\.\d{4}$/,
+    // Açıklama hareket satırının üstüne ve altına ortalanmış; sonraki sayfalarda başlık tekrarlanmaz
+    // ve sayfa başındaki satırlar önceki sayfadaki son hareketin açıklamasının devamıdır.
+    yerlesim: 'blok',
+    sayfaBasiDevam: true,
+    ozelSatirlar: [{ r: /^DEVIR\s+[-+]?[\d.,]+$/, tur: 'acilis' }],
+    altBilgi: [/^SAYFA\s*\d+\s*\/\s*\d+/],
+  },
+  {
     kod: 'kuveytturk',
     ad: 'Kuveyt Türk',
     imzalar: [/KUVEYT TURK/],
@@ -252,7 +268,9 @@ export const GENEL_BANKA = {
   ],
   zorunlu: ['tarih', ['tutar', 'borc', 'alacak'], ['aciklama', 'tip']],
   tarihDeseni: /^\d{1,2}[./-]\d{1,2}[./-]\d{2,4}/,
-  yerlesim: 'yakin',
+  // Blok yerleşimi açıklama hareketin altında, üstünde ya da iki yanında olsa da çoğu düzende doğru eşleşir
+  // (11 örnek ekstrede 'yakin'a göre 1.204 yerine 1.366 / 1.413 satır).
+  yerlesim: 'blok',
   altBilgi: [],
   kayit: (a) => {
     let tutar = sayiBul(a.tutar);

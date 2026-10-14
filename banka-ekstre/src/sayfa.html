@@ -195,6 +195,7 @@
   .alt { display: grid; gap: 8px; font-size: 0.86rem; color: var(--soluk); border-top: 1px solid var(--cizgi); padding-top: 18px; }
   .alt p { margin: 0; max-width: 92ch; }
   .alt b { color: var(--murekkep); font-weight: 600; }
+  .alt .surum { font-family: var(--f-sayi); font-size: 0.78rem; }
 
   .bildirim {
     position: fixed; left: 50%; translate: -50% 0; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 10;
@@ -248,9 +249,10 @@
   </section>
 
   <footer class="alt">
-    <p><b>Tanınan biçimler:</b> Akbank, Halkbank (iki biçim), İş Bankası, Kuveyt Türk, QNB, TEB, Vakıfbank, Yapı Kredi, Ziraat Bankası. Diğer bankaların ekstreleri genel okuyucuyla denenir.</p>
+    <p><b>Tanınan biçimler:</b> Akbank, Halkbank (iki biçim), İş Bankası, Kuveyt Türk, QNB, TEB, Vakıfbank, Yapı Kredi, Ziraat Bankası, Ziraat Katılım. Diğer bankaların ekstreleri genel okuyucuyla denenir.</p>
     <p><b>Bakiye kontrolü:</b> her satırda önceki bakiyeye tutar eklenir ve sonuç ekstredeki bakiyeyle karşılaştırılır. Tutmayan satır işaretlenir; kontrol tutarlıysa tarih, tutar ve işaretler ekstreyle birebir aynıdır.</p>
     <p><b>Excel biçimi:</b> tek sayfa, ilk satır başlık; sütunlar Tarih (gg.aa.yyyy), Açıklama, Tutar, Evrak No (metin), Bakiye. Tutar ve bakiye sayı olarak yazılır.</p>
+    <p class="surum">Sürüm {{SURUM}}</p>
   </footer>
 
   <div class="bildirim" id="bildirim" role="status" hidden></div>

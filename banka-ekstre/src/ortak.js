@@ -21,7 +21,8 @@ export function kurusOku(s) {
   if (/^\(.*\)$/.test(t)) { eksi = true; t = t.slice(1, -1); }
   if (/^[-−–]/.test(t)) { eksi = true; t = t.slice(1); } else if (t.startsWith('+')) t = t.slice(1);
   if (/[-−–]$/.test(t)) { eksi = true; t = t.slice(0, -1); } else if (t.endsWith('+')) t = t.slice(0, -1);
-  if (!/^\d[\d.,]*$/.test(t)) return null;
+  // Binlik gruplar üçer haneli olmalı; yan yana yapışmış iki tutar ("8.220.012,006.820.012,00") reddedilir.
+  if (!/^(\d{1,3}([.,]\d{3})*|\d+)([.,]\d{1,2})?$/.test(t)) return null;
   let tam = t;
   let kesir = '';
   const m = t.match(/[.,](\d{1,2})$/);

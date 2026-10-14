@@ -241,6 +241,7 @@ function alanlaraDagit(parcalar, kol) {
 
 const GENEL_OZEL = [
   { r: /(DEVREDEN|DEVIR|ONCEKI)\s*BAKIYE/, tur: 'acilis' },
+  { r: /^(DEVIR|DEVREDEN)\s+[-+]?[\d.,]+$/, tur: 'acilis' }, // ör. "DEVİR 8.220.012,00"
   { r: /ACILIS\s*BAKIYESI/, tur: 'acilis' },
   { r: /(KAPANIS|DONEM\s*SONU)\s*BAKIYESI?/, tur: 'kapanis' },
 ];
@@ -267,6 +268,30 @@ function ozelSatir(s, banka, kol) {
 
 function once(a, b) {
   return a.sayfa < b.sayfa || (a.sayfa === b.sayfa && a.y < b.y);
+}
+
+/**
+ * 'blok' yerleşimi için: açıklaması hareket satırının üstüne ve altına dağılmış (ortalanmış) biçimlerde
+ * sayfadaki satırları, aralarındaki dikey boşluğa göre bloklara ayırır. Ayırma eşiği, olabildiğince çok
+ * satırın tek hareket içeren bir bloğa düşeceği şekilde seçilir; böylece uzun ve kısa açıklamalı
+ * hareketler yan yana gelse de satırlar karışmaz.
+ */
+function bloklaraAyir(satirlar, capaMi) {
+  if (satirlar.length < 2) return [satirlar];
+  const bosluk = satirlar.slice(1).map((s, i) => s.y - satirlar[i].y);
+  const esikler = [-1, ...new Set(bosluk.map((g) => Math.round(g * 10) / 10))].sort((a, b) => a - b);
+  let enIyi = null;
+  let enIyiPuan = -1;
+  for (const esik of esikler) {
+    const bloklar = [[satirlar[0]]];
+    bosluk.forEach((g, i) => {
+      if (g > esik + 0.3) bloklar.push([]);
+      bloklar[bloklar.length - 1].push(satirlar[i + 1]);
+    });
+    const puan = bloklar.reduce((t, b) => t + (b.filter(capaMi).length === 1 ? b.length : 0), 0);
+    if (puan > enIyiPuan) { enIyiPuan = puan; enIyi = bloklar; }
+  }
+  return enIyi;
 }
 
 function hedefBul(s, mod, sayfaKayitlari, tumKayitlar) {
@@ -312,7 +337,9 @@ function kayitlariCikar(tumSatirlar, banka) {
     const sonIdx = govde.findIndex((s) => altBilgi.some((r) => r.test(s.km)));
     if (sonIdx >= 0) govde = govde.slice(0, sonIdx);
     const capa = (s) => capaMi(s, kolonlar, banka);
-    if (!baslik) {
+    // Başlıksız sayfada ilk hareketten önceki satırlar atılır; sayfaBasiDevam olan biçimlerde ise
+    // bunlar önceki sayfadaki son hareketin açıklamasının devamıdır.
+    if (!baslik && !banka.sayfaBasiDevam) {
       const ilk = govde.findIndex(capa);
       govde = ilk >= 0 ? govde.slice(ilk) : [];
     }
@@ -320,21 +347,41 @@ function kayitlariCikar(tumSatirlar, banka) {
     const kol = sinirHesapla(kolonlar, capalar);
     const sayfaKayitlari = [];
     const devamlar = [];
+    const capaKaydi = new Map();
+    const siradakiler = [];
     for (const s of govde) {
       if (capa(s)) {
         const k = { capa: s, ekler: [], kol };
         kayitlar.push(k);
         sayfaKayitlari.push(k);
+        capaKaydi.set(s, k);
+        siradakiler.push(s);
         continue;
       }
       const oz = ozelSatir(s, banka, kol);
       if (oz) { ozeller.push(oz); continue; }
       devamlar.push(s);
+      siradakiler.push(s);
     }
-    for (const s of devamlar) {
-      const kural = banka.devam ? banka.devam(s, kol) : { mod: banka.yerlesim };
-      const hedef = hedefBul(s, kural.mod, sayfaKayitlari, kayitlar);
-      if (hedef) hedef.ekler.push({ satir: s, alan: kural.alan });
+    if (banka.yerlesim === 'blok') {
+      for (const blok of bloklaraAyir(siradakiler, (s) => capaKaydi.has(s))) {
+        const icCapalar = blok.filter((s) => capaKaydi.has(s));
+        for (const s of blok) {
+          if (capaKaydi.has(s)) continue;
+          const hedef = icCapalar.length === 1
+            ? capaKaydi.get(icCapalar[0])
+            : icCapalar.length === 0
+              ? hedefBul(blok[0], 'alt', sayfaKayitlari, kayitlar) // hareketsiz blok: önceki hareketin devamı
+              : hedefBul(s, 'yakin', sayfaKayitlari, kayitlar);
+          if (hedef) hedef.ekler.push({ satir: s });
+        }
+      }
+    } else {
+      for (const s of devamlar) {
+        const kural = banka.devam ? banka.devam(s, kol) : { mod: banka.yerlesim };
+        const hedef = hedefBul(s, kural.mod, sayfaKayitlari, kayitlar);
+        if (hedef) hedef.ekler.push({ satir: s, alan: kural.alan });
+      }
     }
   }
   return { kayitlar, ozeller };

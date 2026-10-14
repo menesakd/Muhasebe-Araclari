@@ -66,7 +66,8 @@ ${govde}
 `;
 }
 
-const sablon = oku('src', 'sayfa.html');
+const surum = JSON.parse(oku('package.json')).version;
+const sablon = oku('src', 'sayfa.html').replaceAll('{{SURUM}}', surum);
 const uygulama = modulleriBirlestir();
 const yaz = (hedef, metin) => {
   fs.mkdirSync(path.dirname(hedef), { recursive: true });

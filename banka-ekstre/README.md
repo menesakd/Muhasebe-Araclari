@@ -11,7 +11,7 @@ Hesaba giren para artı, çıkan para eksi yazılır. Tarih gerçek tarih hücre
 
 ## Kullanım
 
-1. [`tek-dosya/ekstre-donusturucu.html`](tek-dosya/ekstre-donusturucu.html) dosyasını bilgisayara indirin (GitHub’da dosyayı açıp **Download raw file**).
+1. [Sürümler](https://github.com/menesakd/Muhasebe-Araclari/releases/latest) sayfasından `ekstre-donusturucu.html` dosyasını indirin.
 2. Dosyaya çift tıklayın; Chrome ya da Edge’de açılır. İnternet gerekmez.
 3. Bankanın internet şubesinden indirdiğiniz PDF ekstreleri sayfaya sürükleyin.
 4. Kartta **Bakiye tutarlı** yazıyorsa **Excel indir**’e basın. Birden çok ekstre varsa **Tümünü indir (.zip)** hepsini tek pakette verir.
@@ -38,8 +38,9 @@ Kartın ortasındaki satır ekstrenin mutabakatıdır: **açılış bakiyesi + g
 | Vakıfbank | İşlem No | İşlem Adı + açıklama detayı birleştirilir |
 | Yapı Kredi | Dekont No | Açılış, gün sonu ve kapanış bakiyesi satırları hareket sayılmaz |
 | Ziraat Bankası | Referans | |
+| Ziraat Katılım | yok | Açıklama hareket satırının üstüne ve altına dağılmış; sayfa başına taşan açıklama önceki harekete eklenir. “DEVİR” satırı açılış bakiyesidir |
 
-Listede olmayan bankaların ekstreleri **genel okuyucuyla** denenir: tablo başlığındaki yaygın sütun adlarını (Tarih, Açıklama, Tutar, Borç, Alacak, Bakiye, Dekont No…) arar, tutarlar işaretsizse işareti bakiye farkından çıkarır. Bakiye kontrolü tutarlıysa tarih ve tutarlar doğrudur; açıklamaları gözden geçirin.
+Listede olmayan bankaların ekstreleri **genel okuyucuyla** denenir: tablo başlığındaki yaygın sütun adlarını (Tarih, Açıklama, Tutar, Borç, Alacak, Bakiye, Dekont No…) arar, tutarlar işaretsizse işareti bakiye farkından çıkarır, çok satırlı açıklamaları satırlar arasındaki boşluğa bakarak hareketlere dağıtır. Bakiye kontrolü tutarlıysa tarih ve tutarlar doğrudur; açıklamaları gözden geçirin.
 
 ## Özel durumlar
 
@@ -48,6 +49,16 @@ Listede olmayan bankaların ekstreleri **genel okuyucuyla** denenir: tablo başl
 - **Evrak no olmayan bankalar:** sütun boş kalır; sayfadaki seçenekle sıra numarası verilebilir.
 - **Şifreli PDF:** kartta şifre sorulur.
 - **Taranmış (resim) PDF:** metin olmadığı için okunamaz; bankanın internet şubesinden indirilen PDF kullanılmalı.
+
+## Sürümler
+
+| Sürüm | Değişiklik |
+|---|---|
+| 1.2.0 | Ziraat Katılım biçimi; genel okuyucuda açıklama eşleştirmesi iyileştirildi |
+| 1.1.0 | Excel’e Bakiye sütunu |
+| 1.0.0 | İlk sürüm: 10 banka biçimi, bakiye kontrolü, Zirve Nova Excel’i |
+
+Sayfanın altında kullandığınız sürüm yazar. Yeni sürüm çıktığında [Sürümler](https://github.com/menesakd/Muhasebe-Araclari/releases) sayfasından indirip eski dosyanın yerine koyun.
 
 ## Geliştirme
 
@@ -72,4 +83,4 @@ npm install                            # test için pdf.js paketi
 node araclar/test.mjs ornekler         # ornekler/ klasöründeki PDF'leri dener
 ```
 
-`ornekler/` klasörü depoya yüklenmez (`.gitignore`). Yeni bir banka eklemek için `src/bankalar.js` içindeki bir biçimi örnek alın: sütun başlıklarını, hareket satırının tarih desenini ve uzun açıklamanın satırın altına mı, üstüne mi, iki yanına mı taştığını (`yerlesim`) tanımlamak çoğu zaman yeterlidir.
+`ornekler/` klasörü depoya yüklenmez (`.gitignore`). Yeni bir banka eklemek için `src/bankalar.js` içindeki bir biçimi örnek alın: sütun başlıklarını, hareket satırının tarih desenini ve uzun açıklamanın satırın altına mı (`alt`), üstüne mi (`ust`), iki yanına mı (`yakin`, `blok`) taştığını (`yerlesim`) tanımlamak çoğu zaman yeterlidir. Sürüm numarası `package.json` içindedir; derleme sayfaya yazar.
