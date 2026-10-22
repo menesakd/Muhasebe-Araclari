@@ -166,6 +166,26 @@ export const BANKALAR = [
     },
   },
   {
+    kod: 'sekerbank',
+    ad: 'Şekerbank',
+    imzalar: [/SEKERBANK/, /TR\s?\d{2}\s?0005\s?9/],
+    basliklar: [
+      b('tarih', 'TARIH'), b('yaptiran', 'ISLEMI YAPTIRAN'), b('evrak', 'ISLEM NO'), b('aciklama', 'ACIKLAMA'),
+      b('tutar', 'MEBLAG'), b('bakiye', 'BAKIYE'),
+    ],
+    zorunlu: ['tarih', 'evrak', 'aciklama', 'tutar', 'bakiye'],
+    tarihDeseni: /^\d{2}\.\d{2}\.\d{4}$/,
+    // Açıklama ve "İşlemi Yaptıran" hareket satırının altına taşar; ilk satırları hareket satırından
+    // ~1,5 pt yukarıda basıldığı için o kadar yukarıdaki satır da aynı harekete sayılır.
+    yerlesim: 'alt',
+    ayniSatirPayi: 2.5,
+    // Dönem başı bakiyesi tablonun üstünde: "Tarih : 01.01.2026 - 30.09.2026 ... Devir 6.442,23"
+    ustAcilis: /DEVIR\s+([-+]?[\d.,]+)$/,
+    altBilgi: [/^SEKERBANK - HESAP EKSTRESI/, /^SEKERBANK T\.A\.S/],
+    // "İşlemi Yaptıran" açıklamaya eklenmez: çoğunlukla hesap sahibinin kendi unvanıdır, başka biri olduğunda
+    // (ör. para çekme) adı zaten açıklamada geçer.
+  },
+  {
     kod: 'teb',
     ad: 'TEB',
     imzalar: [/TURK EKONOMI/, /TEB\.COM\.TR/],

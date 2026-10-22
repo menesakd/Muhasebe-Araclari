@@ -34,6 +34,7 @@ Kartın ortasındaki satır ekstrenin mutabakatıdır: **açılış bakiyesi + g
 | İş Bankası | yok | Ek hesap (KMH) kullanılan dönemde bakiye = Bakiye + Ek Hesap Bakiyesi |
 | Kuveyt Türk | yok | Ekstrede banka adı geçmiyor; sayfa düzeninden tanınır |
 | QNB | yok | |
+| Şekerbank | İşlem No | “İşlemi Yaptıran” açıklamaya eklenmez (çoğunlukla hesap sahibinin unvanı; başka biriyse adı açıklamada zaten geçer). Açılış bakiyesi tablonun üstündeki “Devir” tutarıdır |
 | TEB | Dekont No | Açıklama + İşlem Özel Açıklaması birleştirilir |
 | Vakıfbank | İşlem No | İşlem Adı + açıklama detayı birleştirilir |
 | Yapı Kredi | Dekont No | Açılış, gün sonu ve kapanış bakiyesi satırları hareket sayılmaz |
@@ -54,6 +55,7 @@ Listede olmayan bankaların ekstreleri **genel okuyucuyla** denenir: tablo başl
 
 | Sürüm | Değişiklik |
 |---|---|
+| 1.3.0 | Şekerbank biçimi |
 | 1.2.0 | Ziraat Katılım biçimi; genel okuyucuda açıklama eşleştirmesi iyileştirildi |
 | 1.1.0 | Excel’e Bakiye sütunu |
 | 1.0.0 | İlk sürüm: 10 banka biçimi, bakiye kontrolü, Zirve Nova Excel’i |

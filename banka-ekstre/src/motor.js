@@ -266,8 +266,29 @@ function ozelSatir(s, banka, kol) {
   return { tur: eslesen.tur, deger };
 }
 
-function once(a, b) {
-  return a.sayfa < b.sayfa || (a.sayfa === b.sayfa && a.y < b.y);
+/** a, b'den önce mi? pay: a en fazla bu kadar (pt) aşağıda olsa da "önce" sayılır (aynı görsel satır). */
+function once(a, b, pay = 0) {
+  return a.sayfa < b.sayfa || (a.sayfa === b.sayfa && a.y < b.y + pay);
+}
+
+/**
+ * Başlığın üstündeki bilgi alanında bir etiketin yanındaki tutarı bulur (ör. "Devir 6.442,23").
+ * Etiket ile tutar küçük bir dikey kaymayla ayrı satırlara düşebildiği için 3 pt içindekiler birleştirilir.
+ */
+function ustBilgiTutari(satirlar, baslikY, desen) {
+  const ogeler = satirlar.filter((s) => s.y < baslikY - 0.5).flatMap((s) => s.ogeler).sort((p, q) => p.y - q.y);
+  const gruplar = [];
+  for (const o of ogeler) {
+    const son = gruplar[gruplar.length - 1];
+    if (son && o.y - son.y <= 3) son.ogeler.push(o);
+    else gruplar.push({ y: o.y, ogeler: [o] });
+  }
+  for (const g of gruplar) {
+    const metin = katla(g.ogeler.sort((p, q) => p.x - q.x).map((o) => o.s).join(' '));
+    const m = metin.match(desen);
+    if (m) return kurusOku(m[1]);
+  }
+  return null;
 }
 
 /**
@@ -294,9 +315,9 @@ function bloklaraAyir(satirlar, capaMi) {
   return enIyi;
 }
 
-function hedefBul(s, mod, sayfaKayitlari, tumKayitlar) {
+function hedefBul(s, mod, sayfaKayitlari, tumKayitlar, pay = 0) {
   const oncekiBul = () => {
-    for (let i = tumKayitlar.length - 1; i >= 0; i--) if (once(tumKayitlar[i].capa, s)) return tumKayitlar[i];
+    for (let i = tumKayitlar.length - 1; i >= 0; i--) if (once(tumKayitlar[i].capa, s, pay)) return tumKayitlar[i];
     return null;
   };
   if (mod === 'ust') {
@@ -324,6 +345,10 @@ function kayitlariCikar(tumSatirlar, banka) {
     let kolonlar;
     let govde;
     if (baslik) {
+      if (banka.ustAcilis && !sonKolonlar) {
+        const deger = ustBilgiTutari(satirlar, baslik.ana.y, banka.ustAcilis);
+        if (deger != null) ozeller.push({ tur: 'acilis', deger });
+      }
       kolonlar = baslik.kolonlar;
       sonKolonlar = kolonlar;
       govde = satirlar.filter((s) => s.y > baslik.alt + 0.5);
@@ -379,7 +404,7 @@ function kayitlariCikar(tumSatirlar, banka) {
     } else {
       for (const s of devamlar) {
         const kural = banka.devam ? banka.devam(s, kol) : { mod: banka.yerlesim };
-        const hedef = hedefBul(s, kural.mod, sayfaKayitlari, kayitlar);
+        const hedef = hedefBul(s, kural.mod, sayfaKayitlari, kayitlar, banka.ayniSatirPayi || 0);
         if (hedef) hedef.ekler.push({ satir: s, alan: kural.alan });
       }
     }

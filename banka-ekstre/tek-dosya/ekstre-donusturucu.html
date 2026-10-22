@@ -256,10 +256,10 @@
   </section>
 
   <footer class="alt">
-    <p><b>Tanınan biçimler:</b> Akbank, Halkbank (iki biçim), İş Bankası, Kuveyt Türk, QNB, TEB, Vakıfbank, Yapı Kredi, Ziraat Bankası, Ziraat Katılım. Diğer bankaların ekstreleri genel okuyucuyla denenir.</p>
+    <p><b>Tanınan biçimler:</b> Akbank, Halkbank (iki biçim), İş Bankası, Kuveyt Türk, QNB, Şekerbank, TEB, Vakıfbank, Yapı Kredi, Ziraat Bankası, Ziraat Katılım. Diğer bankaların ekstreleri genel okuyucuyla denenir.</p>
     <p><b>Bakiye kontrolü:</b> her satırda önceki bakiyeye tutar eklenir ve sonuç ekstredeki bakiyeyle karşılaştırılır. Tutmayan satır işaretlenir; kontrol tutarlıysa tarih, tutar ve işaretler ekstreyle birebir aynıdır.</p>
     <p><b>Excel biçimi:</b> tek sayfa, ilk satır başlık; sütunlar Tarih (gg.aa.yyyy), Açıklama, Tutar, Evrak No (metin), Bakiye. Tutar ve bakiye sayı olarak yazılır.</p>
-    <p class="surum">Sürüm 1.2.0</p>
+    <p class="surum">Sürüm 1.3.0</p>
   </footer>
 
   <div class="bildirim" id="bildirim" role="status" hidden></div>
@@ -523,6 +523,26 @@ const BANKALAR = [
         evrak: '',
       };
     },
+  },
+  {
+    kod: 'sekerbank',
+    ad: 'Şekerbank',
+    imzalar: [/SEKERBANK/, /TR\s?\d{2}\s?0005\s?9/],
+    basliklar: [
+      b('tarih', 'TARIH'), b('yaptiran', 'ISLEMI YAPTIRAN'), b('evrak', 'ISLEM NO'), b('aciklama', 'ACIKLAMA'),
+      b('tutar', 'MEBLAG'), b('bakiye', 'BAKIYE'),
+    ],
+    zorunlu: ['tarih', 'evrak', 'aciklama', 'tutar', 'bakiye'],
+    tarihDeseni: /^\d{2}\.\d{2}\.\d{4}$/,
+    // Açıklama ve "İşlemi Yaptıran" hareket satırının altına taşar; ilk satırları hareket satırından
+    // ~1,5 pt yukarıda basıldığı için o kadar yukarıdaki satır da aynı harekete sayılır.
+    yerlesim: 'alt',
+    ayniSatirPayi: 2.5,
+    // Dönem başı bakiyesi tablonun üstünde: "Tarih : 01.01.2026 - 30.09.2026 ... Devir 6.442,23"
+    ustAcilis: /DEVIR\s+([-+]?[\d.,]+)$/,
+    altBilgi: [/^SEKERBANK - HESAP EKSTRESI/, /^SEKERBANK T\.A\.S/],
+    // "İşlemi Yaptıran" açıklamaya eklenmez: çoğunlukla hesap sahibinin kendi unvanıdır, başka biri olduğunda
+    // (ör. para çekme) adı zaten açıklamada geçer.
   },
   {
     kod: 'teb',
@@ -918,8 +938,29 @@ function ozelSatir(s, banka, kol) {
   return { tur: eslesen.tur, deger };
 }
 
-function once(a, b) {
-  return a.sayfa < b.sayfa || (a.sayfa === b.sayfa && a.y < b.y);
+/** a, b'den önce mi? pay: a en fazla bu kadar (pt) aşağıda olsa da "önce" sayılır (aynı görsel satır). */
+function once(a, b, pay = 0) {
+  return a.sayfa < b.sayfa || (a.sayfa === b.sayfa && a.y < b.y + pay);
+}
+
+/**
+ * Başlığın üstündeki bilgi alanında bir etiketin yanındaki tutarı bulur (ör. "Devir 6.442,23").
+ * Etiket ile tutar küçük bir dikey kaymayla ayrı satırlara düşebildiği için 3 pt içindekiler birleştirilir.
+ */
+function ustBilgiTutari(satirlar, baslikY, desen) {
+  const ogeler = satirlar.filter((s) => s.y < baslikY - 0.5).flatMap((s) => s.ogeler).sort((p, q) => p.y - q.y);
+  const gruplar = [];
+  for (const o of ogeler) {
+    const son = gruplar[gruplar.length - 1];
+    if (son && o.y - son.y <= 3) son.ogeler.push(o);
+    else gruplar.push({ y: o.y, ogeler: [o] });
+  }
+  for (const g of gruplar) {
+    const metin = katla(g.ogeler.sort((p, q) => p.x - q.x).map((o) => o.s).join(' '));
+    const m = metin.match(desen);
+    if (m) return kurusOku(m[1]);
+  }
+  return null;
 }
 
 /**
@@ -946,9 +987,9 @@ function bloklaraAyir(satirlar, capaMi) {
   return enIyi;
 }
 
-function hedefBul(s, mod, sayfaKayitlari, tumKayitlar) {
+function hedefBul(s, mod, sayfaKayitlari, tumKayitlar, pay = 0) {
   const oncekiBul = () => {
-    for (let i = tumKayitlar.length - 1; i >= 0; i--) if (once(tumKayitlar[i].capa, s)) return tumKayitlar[i];
+    for (let i = tumKayitlar.length - 1; i >= 0; i--) if (once(tumKayitlar[i].capa, s, pay)) return tumKayitlar[i];
     return null;
   };
   if (mod === 'ust') {
@@ -976,6 +1017,10 @@ function kayitlariCikar(tumSatirlar, banka) {
     let kolonlar;
     let govde;
     if (baslik) {
+      if (banka.ustAcilis && !sonKolonlar) {
+        const deger = ustBilgiTutari(satirlar, baslik.ana.y, banka.ustAcilis);
+        if (deger != null) ozeller.push({ tur: 'acilis', deger });
+      }
       kolonlar = baslik.kolonlar;
       sonKolonlar = kolonlar;
       govde = satirlar.filter((s) => s.y > baslik.alt + 0.5);
@@ -1031,7 +1076,7 @@ function kayitlariCikar(tumSatirlar, banka) {
     } else {
       for (const s of devamlar) {
         const kural = banka.devam ? banka.devam(s, kol) : { mod: banka.yerlesim };
-        const hedef = hedefBul(s, kural.mod, sayfaKayitlari, kayitlar);
+        const hedef = hedefBul(s, kural.mod, sayfaKayitlari, kayitlar, banka.ayniSatirPayi || 0);
         if (hedef) hedef.ekler.push({ satir: s, alan: kural.alan });
       }
     }
